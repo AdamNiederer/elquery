@@ -69,7 +69,7 @@ elements. This does not preserve the order of the elements."
   ;; TODO: elq-tree-flatten-inorder, elq-tree-flatten-postorder, elq-tree-flatten-preorder
   (let ((ret nil))
     (dolist (el tree ret)
-      (if (or (not (listp el) (elq--alistp el)))
+      (if (or (not (listp el)) (elq--alistp el))
           (setq ret (cons el ret))
         (setq ret (append (elq-tree-flatten el) ret))))))
 
