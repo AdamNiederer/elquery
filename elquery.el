@@ -36,7 +36,7 @@
  and order of the tree."
   (if (not (listp tree)) tree
     (thread-last tree
-      (remove-if (lambda (e) (and (not (listp e)) (funcall pred e))))
+      (cl-remove-if (lambda (e) (and (not (listp e)) (funcall pred e))))
       (mapcar (lambda (e) (if (and (listp e) (not (elq--dotp e)))
                               (elq-tree-remove-if pred e)
                             e))))))
@@ -69,7 +69,7 @@ elements. This does not preserve the order of the elements."
   ;; TODO: elq-tree-flatten-inorder, elq-tree-flatten-postorder, elq-tree-flatten-preorder
   (let ((ret nil))
     (dolist (el tree ret)
-      (if (or (not (listp el) (elq--alistp el)))
+      (if (or (not (listp el)) (elq--alistp el))
           (setq ret (cons el ret))
         (setq ret (append (elq-tree-flatten el) ret))))))
 
@@ -137,19 +137,19 @@ preserving order"
   "Return a copy of LIST with all keys satisfying PRED removed."
   ;; TODO: Make this not break if a value satisfies PRED
   (let ((ignore-next nil))
-    (remove-if (lambda (e)
-                 (cond
-                  ((funcall pred e) (progn (setq ignore-next t) t))
-                  (ignore-next (progn (setq ignore-next nil) t))
-                  (t nil)))
-               list)))
+    (cl-remove-if (lambda (e)
+                    (cond
+                     ((funcall pred e) (progn (setq ignore-next t) t))
+                     (ignore-next (progn (setq ignore-next nil) t))
+                     (t nil)))
+                  list)))
 
 (defun elq--plist-keys (list)
   "Return a list of keys from plist LIST"
   (let ((i 0))
-    (remove-if (lambda (_) (prog1 (equal (% i 2) 1)
-                             (setq i (1+ i))))
-               list)))
+    (cl-remove-if (lambda (_) (prog1 (equal (% i 2) 1)
+                                (setq i (1+ i))))
+                  list)))
 
 (defun elq--plist-equal (a b &optional keys)
   "Return whether plists A and B are equal in content. If KEYS is supplied, only
@@ -211,7 +211,7 @@ to VAL."
 
 (defun elq-rm-prop (node prop)
   "Destructively remove PROP from NODE"
-  (elq--plist-set! node :props (remove-if (lambda (p) (equal (car p) prop)) props)))
+  (elq--plist-set! node :props (cl-remove-if (lambda (p) (equal (car p) prop)) props)))
 
 (defun elq-parent (node)
   "Return the parent of NODE"
@@ -285,8 +285,8 @@ pointer bashing."
          (equal (elq-el tree) (elq-el query)))
        (if (not (elq-classes query)) t
          (elq--subset? (elq-classes query) (elq-classes tree)))
-       (let ((keys (remove-if (lambda (e) (member e '(:class)))
-                              (elq--plist-keys (elq-props query)))))
+       (let ((keys (cl-remove-if (lambda (e) (member e '(:class)))
+                                 (elq--plist-keys (elq-props query)))))
          (if (not keys) t
            (elq--plist-equal (elq-props tree)
                              (elq-props query)
@@ -373,27 +373,27 @@ CAN-RECURSE is set, continue down the tree until a matching element is found."
    ((and (elq--intersects? query tree) (elq-children query))
     (progn
       (message "Match with remaining heirarchy requirements: Return recursed match")
-      (remove-if-not 'identity (mapcar (lambda (child)
-                                         (elq--$ (elq-children query) child
-                                                 (elq--$-recurse? query)))
-                                       (elq--$-next query tree)))))
+      (cl-remove-if-not 'identity (mapcar (lambda (child)
+                                            (elq--$ (elq-children query) child
+                                                    (elq--$-recurse? query)))
+                                          (elq--$-next query tree)))))
    ;; A match without children in the query in the query will return the tree,
    ;; but we must still recurse to find any matching children in tree if we
    ;; aren't looking for siblings or next-children
    ((and can-recurse (elq--intersects? query tree) (not (elq-children query)))
     (progn
       (message "Match with recurse flag: Return subtree plus recursive matches")
-      (append (list tree) (remove-if-not 'identity (mapcar (lambda (child)
-                                                             (elq--$ query child t))
-                                                           (elq-children tree))))))
+      (append (list tree) (cl-remove-if-not 'identity (mapcar (lambda (child)
+                                                                (elq--$ query child t))
+                                                              (elq-children tree))))))
    ;; No match and a recurse flag means we can continue down the tree and see if
    ;; we get any matches. If we do, collect them in a list
    (can-recurse
     (progn
       (message "No match with recurse flag: recurse again")
-      (remove-if-not 'identity (mapcar (lambda (child)
-                                         (elq--$ query child t))
-                                       (elq-children tree)))))
+      (cl-remove-if-not 'identity (mapcar (lambda (child)
+                                            (elq--$ query child t))
+                                          (elq-children tree)))))
    ;; No match and no allowed recursion means we can't do anything else
    (t nil)))
 
@@ -401,10 +401,10 @@ CAN-RECURSE is set, continue down the tree until a matching element is found."
   "Return a list of elements in the subtree of TREE mathing QUERY-STRING."
   (let ((queries (elq--parse-union query-string)))
     (elq-tree-flatten-until 'elq-elp
-                            (remove-if-not 'identity
-                                           (mapcar (lambda (query)
-                                                     (elq--$ query tree t))
-                                                   queries)))))
+                            (cl-remove-if-not 'identity
+                                              (mapcar (lambda (query)
+                                                        (elq--$ query tree t))
+                                                      queries)))))
 
 (defun elq--write-props (node)
   "Return a string representing the properties of NODE"
