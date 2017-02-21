@@ -211,7 +211,8 @@ to VAL."
 
 (defun elq-rm-prop (node prop)
   "Destructively remove PROP from NODE"
-  (elq--plist-set! node :props (cl-remove-if (lambda (p) (equal (car p) prop)) props)))
+  (elq--plist-set! node :props (cl-remove-if (lambda (p) (equal (car p) prop))
+                                             (elq-props node))))
 
 (defun elq-parent (node)
   "Return the parent of NODE"
@@ -249,7 +250,7 @@ these text nodes"
   "Return the value of NODE's data-KEY property. If VAL is supplied,
 destructively set NODE's data-KEY property to VAL"
   (if val
-      (elq--set-prop (s-concat "data-" key) val)
+      (elq-prop node (s-concat "data-" key) val)
     (elq-prop node (s-concat "data-" key))))
 
 (defun elq-read-file (file)
