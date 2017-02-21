@@ -159,7 +159,6 @@ test keys from that list."
         (iseq t))
     (dolist (key keys iseq)
       (when (not (equal (plist-get a key) (plist-get b key)))
-        (message "%s failed |%s %s| ||%s %s|| |||%s|||" key (plist-get a key) (plist-get b key) a b keys)
         (setq iseq nil)))))
 
 (defun elq--subset? (sub set)
@@ -360,41 +359,33 @@ the relationship operator :rel in QUERY"
 (defun elq--$ (query tree can-recurse)
   "Return a subtree of TREE matching QUERY, or nil if no subtree is found. If
 CAN-RECURSE is set, continue down the tree until a matching element is found."
-  (message "TREE: %s\nQUERY: %s\nMATCH: %s\nRECURSE: %s" tree query (elq--intersects? query tree) can-recurse)
   (cond
    ;; If we're out of stuff to search, we can't do anything else
-   ((equal tree nil) (message "Leaf did not match") nil)
+   ((equal tree nil) nil)
    ;; No children in the query, no children in the tree, and a match in the tree
    ;; means we can return the leaf
    ((and (elq--intersects? query tree) (not (elq-children query)) (not (elq-children tree)))
-    (progn (message "Leaf matched; return it")
-           tree))
+    tree)
    ;; A match with children remaining in the query to find means we have to
    ;; recurse according to the query's heirarchy relationship
    ((and (elq--intersects? query tree) (elq-children query))
-    (progn
-      (message "Match with remaining heirarchy requirements: Return recursed match")
-      (cl-remove-if-not 'identity (mapcar (lambda (child)
-                                            (elq--$ (elq-children query) child
-                                                    (elq--$-recurse? query)))
-                                          (elq--$-next query tree)))))
+    (cl-remove-if-not 'identity (mapcar (lambda (child)
+                                          (elq--$ (elq-children query) child
+                                                  (elq--$-recurse? query)))
+                                        (elq--$-next query tree))))
    ;; A match without children in the query in the query will return the tree,
    ;; but we must still recurse to find any matching children in tree if we
    ;; aren't looking for siblings or next-children
    ((and can-recurse (elq--intersects? query tree) (not (elq-children query)))
-    (progn
-      (message "Match with recurse flag: Return subtree plus recursive matches")
-      (append (list tree) (cl-remove-if-not 'identity (mapcar (lambda (child)
-                                                                (elq--$ query child t))
-                                                              (elq-children tree))))))
+    (append (list tree) (cl-remove-if-not 'identity (mapcar (lambda (child)
+                                                              (elq--$ query child t))
+                                                            (elq-children tree)))))
    ;; No match and a recurse flag means we can continue down the tree and see if
    ;; we get any matches. If we do, collect them in a list
    (can-recurse
-    (progn
-      (message "No match with recurse flag: recurse again")
-      (cl-remove-if-not 'identity (mapcar (lambda (child)
-                                            (elq--$ query child t))
-                                          (elq-children tree)))))
+    (cl-remove-if-not 'identity (mapcar (lambda (child)
+                                          (elq--$ query child t))
+                                        (elq-children tree))))
    ;; No match and no allowed recursion means we can't do anything else
    (t nil)))
 
