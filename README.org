@@ -47,16 +47,17 @@ It's like jQuery, but way less useful. Given this example HTML file,
 - ~(elq-classes NODE)~ - Return a list of the classes of NODE
 - ~(elq-text NODE)~ - Return the text contained in NODE. If there are multiple
   text elements, for example, ~<span>Hello <span>cruel</span> world</span>~,
-  return the concatenation of these nodes, (~"Hello  world"~).
+  return the concatenation of these nodes, ~Hello  world~, with two spaces
+  between ~Hello~ and ~world~
 *** Property Modification
 - ~(elq-props NODE)~ - Return a plist of this node's properties, including its
   id, class, and data attributes.
 - ~(elq-data NODE KEY &optional VAL)~ - Return the value of NODE's data-KEY
   property. If VAL is supplied, destructively set NODE's data-KEY property to
-  VAL. For example, on the node ~<span data-name="adam">~,
+  VAL. For example, on the node ~<span data-name="adam">~, 
+  ~(elq-data node "name")~ would return ~adam~
 - ~(elq-prop NODE PROP &optional VAL)~ - Return the value of PROP in NODE. If
   VAL is supplied, destructively set PROP to VAL.
-  ~(elq-data node "name")~ would return ~"adam"~
 - ~(elq-rm-prop NODE)~ - Destructively remove PROP from NODE
 *** Predicates
 - ~(elq-elp OBJ)~ - Return whether OBJ represents a DOM node
@@ -106,7 +107,7 @@ brave enough to hack on this:
   node", ~:el is nil~
 - ~:text~ - A string containing the concatenation of all text elements
   immediately below this one on the tree. For example, the node representing
-  ~<span>Hello <span>cruel</span> world</span>~ would be ~"Hello  world"~.
+  ~<span>Hello <span>cruel</span> world</span>~ would be ~Hello  world".
 - ~:props~ - A plist of HTML properties for each element, including but not
   limited to its ~:id~, ~class~, ~data-*~, and ~name~ attributes.
 - ~:parent~ - A pointer to the parent element. Emacs thinks this is a list.
