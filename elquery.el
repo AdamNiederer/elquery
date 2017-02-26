@@ -26,6 +26,9 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+;;; Commentary:
+;;
+
 ;;; Code:
 
 (require 's)
@@ -34,8 +37,8 @@
 
 ;; Functions to eventually break out into a seperate tree library
 (defun elquery-tree-remove-if (pred tree)
-  "Remove all elements from TREE if they satisfy PRED. Preserves the structure
-and order of the tree."
+  "Remove all elements satisfying PRED from TREE.
+This function preserves the structure and order of the tree."
   (if (not (listp tree)) tree
     (thread-last tree
                  (cl-remove-if (lambda (e) (and (not (listp e)) (funcall pred e))))
@@ -44,8 +47,9 @@ and order of the tree."
                                        e))))))
 
 (defun elquery-tree-remove-if-not (pred tree)
-  "Remove all elements from TREE if they do not satisfy PRED. Preserves the
-structure and order of the tree."
+  "Remove all elements not satisfying PRED from TREE.
+
+This function preserves the structure and order of the tree."
   (elquery-tree-remove-if (lambda (e) (not (funcall pred e))) tree))
 
 (defun elquery-tree-mapcar (fn tree)
@@ -57,8 +61,8 @@ structure and order of the tree."
             tree)))
 
 (defun elquery-tree-reduce (fn tree)
-  "Perform an in-order reduction of TREE with FN. Equivalent to a reduction on
-a flattened tree"
+  "Perform an in-order reduction with FN over TREE.
+This is equivalent to a reduction on a flattened tree."
   (if (not (listp tree)) nil
     (cl-reduce (lambda (a b) (if (and (listp b) (not (elquery--dotp b)))
                                  (funcall fn a (elquery-tree-reduce fn b))
@@ -66,8 +70,8 @@ a flattened tree"
                tree))) ; TODO: Dash is way faster at this. Add a dependency?
 
 (defun elquery-tree-flatten (tree)
-  "Flatten the tree, removing all list nesting and leaving a list of only atomic
-elements. This does not preserve the order of the elements."
+  "Return TREE without any nesting.
+This does not preserve the order of the elements."
   ;; TODO: elquery-tree-flatten-inorder, elquery-tree-flatten-postorder, elquery-tree-flatten-preorder
   (let ((ret nil))
     (dolist (el tree ret)
@@ -76,8 +80,8 @@ elements. This does not preserve the order of the elements."
         (setq ret (append (elquery-tree-flatten el) ret))))))
 
 (defun elquery-tree-flatten-until (pred tree)
-  "Flatten the tree, but treat elements matching PRED as atomic elements, not
-preserving order"
+  "Flatten elements not satsifying PRED in TREE.
+This does not preserve the order of the elements."
   (let ((ret nil))
     (dolist (el tree ret)
       (if (or (not (listp el)) (elquery--alistp el) (funcall pred el))
@@ -118,7 +122,8 @@ preserving order"
   (and (consp obj) (cdr obj) (not (consp (cdr obj)))))
 
 (defun elquery--plist-set! (list kw val)
-  ;; TODO: Does plist-put do everything this function does?
+  "In LIST, destructively set KW to VAL."
+  ;; Todo: Does plist-put do everything this function does?
   (let ((ptr list))
     (while (and (cdr ptr) (not (equal (car ptr) kw)))
       (setq ptr (cdr ptr)))
@@ -154,8 +159,8 @@ preserving order"
                   list)))
 
 (defun elquery--plist-equal (a b &optional keys)
-  "Return whether plists A and B are equal in content. If KEYS is supplied, only
-test keys from that list."
+  "Return whether plists A and B are equal in content.
+If KEYS is supplied, only test keys from that list."
   ;; TODO: Make this not O(n^2)
   (let ((keys (or keys (cl-union (elquery--plist-keys a) (elquery--plist-keys b))))
         (iseq t))
@@ -164,8 +169,7 @@ test keys from that list."
         (setq iseq nil)))))
 
 (defun elquery--subset? (sub set)
-  "Return whether the set of the elements of SUB is a subset of the elements of
-SET"
+  "Return whether the elements of SUB is a subset of the elements of SET."
   ;; This is currently O(rn). We can get it down to nlogn by sorting and
   ;; linearly searching, but I'm not sure if there's a clean solution for this
   ;; in elisp.
@@ -203,15 +207,15 @@ SET"
   (plist-get (plist-get node :parent) :children))
 
 (defun elquery-prop (node prop &optional val)
-  "Return the value of PROP in NODE. If VAL is supplied, destructively set PROP
-to VAL."
+  "In NODE, return the value of PROP.
+If VAL is supplied, destructively set PROP to VAL."
   (let ((props (elquery-props node)))
     (when val
       (elquery--plist-set! props (elquery--to-kw prop) val))
     (plist-get props (elquery--to-kw prop))))
 
 (defun elquery-rm-prop (node prop)
-  "Destructively remove PROP from NODE."
+  "In NODE, destructively remove PROP."
   (elquery--plist-set! node :props (cl-remove-if (lambda (p) (equal (car p) prop))
                                                  (elquery-props node))))
 
@@ -224,14 +228,11 @@ to VAL."
   (plist-get node :el))
 
 (defun elquery-text (node)
-  "Return the text content of NODE. If there are multiple text nodes in NODE
-\(e.g. <h1>some text<span></span>more text</h1>), return the concatenation of
+  "Return the text content of NODE.
+If there are multiple text nodes in NODE
+\(e.g.  <h1>some text<span></span>more text</h1>), return the concatenation of
 these text nodes"
   (plist-get node :text))
-
-(defun elquery--new-node (el parent &optional children text props)
-  ;; TODO: Will we actually ever need this?
-  (append `(:el ,el :text ,(or text "")) :parent ,parent :children ,children) props)
 
 (defun elquery-classes (node)
   "Return a list of NODE's classes."
@@ -248,8 +249,8 @@ these text nodes"
   (elquery-prop node :id))
 
 (defun elquery-data (node key &optional val)
-  "Return the value of NODE's data-KEY property. If VAL is supplied,
-destructively set NODE's data-KEY property to VAL"
+  "Return the value of NODE's data- KEY property.
+If VAL is supplied, destructively set NODE's data-KEY property to VAL"
   (if val
       (elquery-prop node (s-concat "data-" key) val)
     (elquery-prop node (s-concat "data-" key))))
@@ -264,9 +265,10 @@ destructively set NODE's data-KEY property to VAL"
                    (elquery--parse-libxml-tree nil)))))
 
 (defun elquery--parse-libxml-tree (parent tree)
-  "Convert libxml's alist-heavy and position-dependant format to a plist format,
-remove some useless whitespace nodes, and recursively set nodes' parents via
-pointer bashing."
+  "Convert libxml's alist-heavy and position-dependant format to a plist format.
+Additionally, remove some useless whitespace nodes, and recursively set nodes'
+PARENTs via pointer bashing.
+Argument TREE is the libxml tree to convert."
   (if (stringp tree)
       `(:el nil :text ,tree :children nil :parent ,parent)
     (let ((self (append (list :el (prin1-to-string (car tree)))
@@ -304,8 +306,8 @@ pointer bashing."
                                         "\\(.+\\)?")) ; Rest of tree (recursively parsed)
 
 (defun elquery--parse-intersection (string)
-  "Return a plist representing a single intersection in a query, like
-span#kek.bur[foo=bar]"
+  "Return a plist representing a single intersection in the query STRING.
+For example, span#kek.bur[foo=bar]"
   (let* ((el (car (s-match elquery--el-re string)))
          (attrs (elquery--alist-to-plist
                  (mapcar (lambda (match) (apply 'cons (cdr match)))
@@ -325,8 +327,8 @@ span#kek.bur[foo=bar]"
    (t :child)))
 
 (defun elquery--parse-heirarchy (string)
-  "Return a plist representing a heirarchical structure in a query, For example,
-#foo .bar > #bur[name=baz] returns
+  "Return a plist representing a heirarchical structure in a query STRING.
+For example, #foo .bar > #bur[name=baz] returns
 \(:el nil :props (:id \"foo\") :rel :child :children
      (:el nil :props (:class \"bar\") :rel :next-child :children
           (:el nil :props (:id \"bur\" :name \"baz\") :rel :child :children
@@ -344,8 +346,7 @@ span#kek.bur[foo=bar]"
   (mapcar 'elquery--parse-heirarchy (s-split ", *" string)))
 
 (defun elquery--$-next (query tree)
-  "Return a subtree of TREE corresponding to the relationship operator :rel
-in QUERY"
+  "For QUERY, Return a subtree of TREE corresponding to :rel in QUERY."
   (cond
    ((equal (plist-get query :rel) :next-child) (elquery-children tree))
    ((equal (plist-get query :rel) :next-sibling) (error "TODO"))
@@ -355,13 +356,13 @@ in QUERY"
    ((equal (plist-get query :rel) :child) (elquery-children tree))))
 
 (defun elquery--$-recurse? (query)
-  "Return whether recursion until finding a matching element is allowed for
-the relationship operator :rel in QUERY"
+  "Return whether recursion until finding a matching element is allowed.
+This is determined via the relationship operator :rel in QUERY."
   (equal (plist-get query :rel) :child))
 
 (defun elquery--$ (query tree can-recurse)
-  "Return a subtree of TREE matching QUERY, or nil if no subtree is found. If
-CAN-RECURSE is set, continue down the tree until a matching element is found."
+  "For QUERY, return a subtree of TREE matching QUERY, or nil if none is found.
+If CAN-RECURSE is set, continue down the tree until a matching element is found."
   (cond
    ;; If we're out of stuff to search, we can't do anything else
    ((equal tree nil) nil)
@@ -393,7 +394,7 @@ CAN-RECURSE is set, continue down the tree until a matching element is found."
    (t nil)))
 
 (defun elquery-$ (query-string tree)
-  "Return a list of elements in the subtree of TREE mathing QUERY-STRING."
+  "Return a list of elements matching QUERY-STRING in the subtree of TREE."
   (let ((queries (elquery--parse-union query-string)))
     (elquery-tree-flatten-until 'elquery-elp
                                 (cl-remove-if-not 'identity
@@ -412,16 +413,18 @@ CAN-RECURSE is set, continue down the tree until a matching element is found."
                                         (elquery--plist-keys props)))))))
 
 (defun elquery--indent-insert (string depth whitespace?)
-  "Insert the proper amount of indentation, based on `sgml-basic-offset' and
-DEPTH, then STRING, then a newline. If WHITESPACE? is nil, do not insert any
-indentation or newline."
+  "Insert the proper amount of indentation for STRING.
+Inserts the product of based on `sgml-basic-offset' and DEPTH, then STRING, then
+a newline.  If WHITESPACE? is nil, do not insert any indentation or newline."
   (insert (if whitespace? (s-repeat (* depth sgml-basic-offset) " ") "")
           string
           (if whitespace? "\n" "")))
 
 (defun elquery--write (tree depth &optional whitespace?)
-  "A recursive subroutine for `elquery-write'. Inserts the HTML string
-representation of TREE into the current buffer."
+  "A recursive subroutine for `elquery-write'.
+Inserts the HTML string representation of TREE into the current buffer with
+depth DEPTH.  If WHITESPACE is provided, insert the appropriate amount of
+whitespace as well."
   ;; TODO: Close singleton elements with no children (<input/> and friends)
   (if (not (elquery-el tree))
       (elquery--indent-insert (elquery-text tree) depth whitespace?)
@@ -431,8 +434,9 @@ representation of TREE into the current buffer."
     (elquery--indent-insert (format "</%s>" (elquery-el tree)) depth whitespace?)))
 
 (defun elquery-write (tree &optional whitespace?)
-  "Return an html string representing TREE. If WHITESPACE? is non-nil, insert
-indentation and newlines according to `sgml-basic-offset'"
+  "Return an html string representing TREE.
+If WHITESPACE? is non-nil, insert indentation and newlines according to
+`sgml-basic-offset'."
   (with-temp-buffer
     (elquery--write tree 0 whitespace?)
     (buffer-string)))
