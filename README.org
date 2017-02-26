@@ -29,13 +29,13 @@ It's like jQuery, but way less useful. Given this example HTML file,
 *** I/O and Parsing
 - ~(elq-read-file FILE)~ - Parse an HTML file, returning an internal
   representation of its AST. Use ~(elq-...)~ to manipulate this AST.
+- ~(elq-write TREE)~ - Return a string of the html representation of TREE and its
+  children.
+*** DOM Traversal
 - ~(elq-$ SELECTOR TREE)~ - Return a list of subtrees of TREE which matches the
   query string. Currently, the element name, id, class, and property values are
   supported, along with some set operations and hierarchy relationships. See
   Selector Syntax for a more detailed overview of valid selectors.
-- ~(elq-write TREE)~ - Return a string of the html representation of TREE and its
-  children.
-*** DOM Traversal
 - ~(elq-parent NODE)~ - Return the parent of NODE
 - ~(elq-children NODE)~ - Return a list of the children of NODE
 - ~(elq-siblings NODE)~ - Return a list of the siblings of NODE
@@ -54,7 +54,7 @@ It's like jQuery, but way less useful. Given this example HTML file,
   id, class, and data attributes.
 - ~(elq-data NODE KEY &optional VAL)~ - Return the value of NODE's data-KEY
   property. If VAL is supplied, destructively set NODE's data-KEY property to
-  VAL. For example, on the node ~<span data-name="adam">~, 
+  VAL. For example, on the node ~<span data-name="adam">~,
   ~(elq-data node "name")~ would return ~adam~
 - ~(elq-prop NODE PROP &optional VAL)~ - Return the value of PROP in NODE. If
   VAL is supplied, destructively set PROP to VAL.
