@@ -9,7 +9,7 @@
 ;; Keywords: html hypermedia tools webscale
 ;; Homepage: https://github.com/AdamNiederer/elquery
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "25.1") (s "1.11.0"))
+;; Package-Requires: ((emacs "25.1") (s "1.11.0") (dash "2.13.0"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -32,6 +32,7 @@
 ;;; Code:
 
 (require 's)
+(require 'dash)
 (require 'cl-lib)
 (require 'subr-x)
 
@@ -41,33 +42,15 @@
 This function preserves the structure and order of the tree."
   (if (not (listp tree)) tree
     (thread-last tree
-                 (cl-remove-if (lambda (e) (and (not (listp e)) (funcall pred e))))
-                 (mapcar (lambda (e) (if (and (listp e) (not (elquery--dotp e)))
-                                         (elquery-tree-remove-if pred e)
-                                       e))))))
+      (--remove (and (not (listp it)) (funcall pred it)))
+      (--map (if (and (listp it) (not (-cons-pair? it)))
+                 (elquery-tree-remove-if pred it)
+               it)))))
 
 (defun elquery-tree-remove-if-not (pred tree)
   "Remove all elements not satisfying PRED from TREE.
-
 This function preserves the structure and order of the tree."
   (elquery-tree-remove-if (lambda (e) (not (funcall pred e))) tree))
-
-(defun elquery-tree-mapcar (fn tree)
-  "Apply FN to all elements in TREE."
-  (if (not (listp tree)) tree
-    (mapcar (lambda (e) (if (and (listp e) (not (elquery--dotp e)))
-                            (elquery-tree-mapcar fn e)
-                          (funcall fn e)))
-            tree)))
-
-(defun elquery-tree-reduce (fn tree)
-  "Perform an in-order reduction with FN over TREE.
-This is equivalent to a reduction on a flattened tree."
-  (if (not (listp tree)) nil
-    (cl-reduce (lambda (a b) (if (and (listp b) (not (elquery--dotp b)))
-                                 (funcall fn a (elquery-tree-reduce fn b))
-                               (funcall fn a b)))
-               tree))) ; TODO: Dash is way faster at this. Add a dependency?
 
 (defun elquery-tree-flatten (tree)
   "Return TREE without any nesting.
@@ -91,13 +74,13 @@ This does not preserve the order of the elements."
 ;; Functions to eventually upstream into Dash
 (defun elquery--alistp (list)
   "Return whether LIST is an alist."
-  (if (or (not (listp list)) (elquery--dotp list)) nil
-    (cl-reduce (lambda (a b) (and a (elquery--dotp b))) (cons t list))))
+  (if (or (not (listp list)) (-cons-pair? list)) nil
+    (--reduce (and acc (-cons-pair? it)) (cons t list))))
 
 (defun elquery--alist-to-plist (list)
   "Convert alist LIST to a plist, preserving all key-value relationships."
-  (cl-reduce (lambda (plist dot) (append plist (list (elquery--to-kw (car dot)) (cdr dot))))
-             (cons '() list)))
+  (--reduce (append acc (list (elquery--to-kw (car it))) (cdr it))
+            (cons '() list)))
 
 (defun elquery--sym-to-kw (sym)
   "Convert symbol SYM to a keyword."
@@ -117,13 +100,10 @@ This does not preserve the order of the elements."
     (elquery--sym-to-kw (if (symbolp obj) obj
                           (make-symbol (if (stringp obj) obj
                                          (prin1-to-string obj)))))))
-(defun elquery--dotp (obj)
-  "Return whether OBJ is a dotted cons cell (e.g. '(a . b))."
-  (and (consp obj) (cdr obj) (not (consp (cdr obj)))))
 
 (defun elquery--plist-set! (list kw val)
   "In LIST, destructively set KW to VAL."
-  ;; Todo: Does plist-put do everything this function does?
+  ;; TODO: Does plist-put do everything this function does?
   (let ((ptr list))
     (while (and (cdr ptr) (not (equal (car ptr) kw)))
       (setq ptr (cdr ptr)))
@@ -132,37 +112,26 @@ This does not preserve the order of the elements."
       (setcdr ptr (list kw))
       (setcdr (cdr ptr) (list val)))))
 
-;; (defun elquery--plistp (obj &optional key-fn)
-;;   "Heuristically determine if OBJ is a plist. Keys will be tested against
-;; key-fn if provided; otherwise, this function will simply check if the list is
-;; of even length and if keys are of the same type"
-;;   (if key-fn
-;;       (elquery--reduce-nth )
-;;       ))
-
 (defun elquery--plist-remove-if (list pred)
   "Return a copy of LIST with all keys satisfying PRED removed."
-  ;; TODO: Make this not break if a value satisfies PRED
   (let ((ignore-next nil))
-    (cl-remove-if (lambda (e)
-                    (cond
-                     ((funcall pred e) (progn (setq ignore-next t) t))
-                     (ignore-next (progn (setq ignore-next nil) t))
+    (--remove (cond ((ignore-next (progn (setq ignore-next nil) t))
+                     (funcall pred it) (progn (setq ignore-next t) t)
                      (t nil)))
-                  list)))
+              list)))
 
 (defun elquery--plist-keys (list)
   "Return a list of keys from plist LIST."
   (let ((i 0))
-    (cl-remove-if (lambda (_) (prog1 (equal (% i 2) 1)
-                                (setq i (1+ i))))
-                  list)))
+    (--remove (prog1 (equal (% i 2) 1)
+                (setq i (1+ i)))
+              list)))
 
 (defun elquery--plist-equal (a b &optional keys)
   "Return whether plists A and B are equal in content.
 If KEYS is supplied, only test keys from that list."
   ;; TODO: Make this not O(n^2)
-  (let ((keys (or keys (cl-union (elquery--plist-keys a) (elquery--plist-keys b))))
+  (let ((keys (or keys (-union (elquery--plist-keys a) (elquery--plist-keys b))))
         (iseq t))
     (dolist (key keys iseq)
       (when (not (equal (plist-get a key) (plist-get b key)))
@@ -170,14 +139,7 @@ If KEYS is supplied, only test keys from that list."
 
 (defun elquery--subset? (sub set)
   "Return whether the elements of SUB is a subset of the elements of SET."
-  ;; This is currently O(rn). We can get it down to nlogn by sorting and
-  ;; linearly searching, but I'm not sure if there's a clean solution for this
-  ;; in elisp.
-  (cl-reduce (lambda (a b) (and a (member b set))) (cons t sub)))
-
-(defun elquery--set-equal (a b)
-  "Return whether A and B contain the same members, regardless of their ordering."
-  (and (elquery--subset? a b) (elquery--subset? b a)))
+  (--reduce (and acc (member it set)) (cons t sub)))
 
 ;; Functions to eventually upstream into s
 (defun elquery--whitespace? (s)
@@ -216,8 +178,8 @@ If VAL is supplied, destructively set PROP to VAL."
 
 (defun elquery-rm-prop (node prop)
   "In NODE, destructively remove PROP."
-  (elquery--plist-set! node :props (cl-remove-if (lambda (p) (equal (car p) prop))
-                                                 (elquery-props node))))
+  (elquery--plist-set! node :props (--remove (equal (car it) prop)
+                                             (elquery-props node))))
 
 (defun elquery-parent (node)
   "Return the parent of NODE."
@@ -261,8 +223,8 @@ If VAL is supplied, destructively set NODE's data-KEY property to VAL"
     (insert-file-contents file)
     (let ((tree (libxml-parse-html-region (point-min) (point-max))))
       (thread-last tree
-                   (elquery-tree-remove-if 'elquery--whitespace?)
-                   (elquery--parse-libxml-tree nil)))))
+        (elquery-tree-remove-if 'elquery--whitespace?)
+        (elquery--parse-libxml-tree nil)))))
 
 (defun elquery--parse-libxml-tree (parent tree)
   "Convert libxml's alist-heavy and position-dependant format to a plist format.
@@ -272,9 +234,8 @@ Argument TREE is the libxml tree to convert."
   (if (stringp tree)
       `(:el nil :text ,tree :children nil :parent ,parent)
     (let ((self (append (list :el (prin1-to-string (car tree)))
-                        (list :text (cl-reduce (lambda (a b)
-                                                 (if (stringp b) (concat a b) a))
-                                               (cons "" (cdr (cdr tree)))))
+                        (list :text (--reduce (if (stringp it) (concat acc it) acc)
+                                              (cons "" (cl-cddr tree))))
                         (list :props (elquery--alist-to-plist (cl-second tree)))
                         (list :children nil)
                         (list :parent nil))))
@@ -290,8 +251,8 @@ Argument TREE is the libxml tree to convert."
          (equal (elquery-el tree) (elquery-el query)))
        (if (not (elquery-classes query)) t
          (elquery--subset? (elquery-classes query) (elquery-classes tree)))
-       (let ((keys (cl-remove-if (lambda (e) (member e '(:class)))
-                                 (elquery--plist-keys (elquery-props query)))))
+       (let ((keys (--filter (equal it :class)
+                             (elquery--plist-keys (elquery-props query)))))
          (if (not keys) t
            (elquery--plist-equal (elquery-props tree)
                                  (elquery-props query)
@@ -368,28 +329,27 @@ If CAN-RECURSE is set, continue down the tree until a matching element is found.
    ((equal tree nil) nil)
    ;; No children in the query, no children in the tree, and a match in the tree
    ;; means we can return the leaf
-   ((and (elquery--intersects? query tree) (not (elquery-children query)) (not (elquery-children tree)))
+   ((and (elquery--intersects? query tree)
+         (not (elquery-children query))
+         (not (elquery-children tree)))
     tree)
    ;; A match with children remaining in the query to find means we have to
    ;; recurse according to the query's heirarchy relationship
-   ((and (elquery--intersects? query tree) (elquery-children query))
-    (cl-remove-if-not 'identity (mapcar (lambda (child)
-                                          (elquery--$ (elquery-children query) child
-                                                      (elquery--$-recurse? query)))
-                                        (elquery--$-next query tree))))
-   ;; A match without children in the query in the query will return the tree,
-   ;; but we must still recurse to find any matching children in tree if we
-   ;; aren't looking for siblings or next-children
+   ((and (elquery--intersects? query tree)
+         (elquery-children query))
+    (-non-nil (--map (elquery--$ (elquery-children query) it (elquery--$-recurse? query))
+                     (elquery--$-next query tree))))
+   ;; A match without children in the query will return the tree, but we must
+   ;; still recurse to find any matching children in tree if we aren't looking
+   ;; for siblings or next-children
    ((and can-recurse (elquery--intersects? query tree) (not (elquery-children query)))
-    (append (list tree) (cl-remove-if-not 'identity (mapcar (lambda (child)
-                                                              (elquery--$ query child t))
-                                                            (elquery-children tree)))))
+    (append (list tree) (-non-nil (--map (elquery--$ query it t)
+                                         (elquery-children tree)))))
    ;; No match and a recurse flag means we can continue down the tree and see if
    ;; we get any matches. If we do, collect them in a list
    (can-recurse
-    (cl-remove-if-not 'identity (mapcar (lambda (child)
-                                          (elquery--$ query child t))
-                                        (elquery-children tree))))
+    (-non-nil (--map (elquery--$ query it t)
+                     (elquery-children tree))))
    ;; No match and no allowed recursion means we can't do anything else
    (t nil)))
 
@@ -397,20 +357,16 @@ If CAN-RECURSE is set, continue down the tree until a matching element is found.
   "Return a list of elements matching QUERY-STRING in the subtree of TREE."
   (let ((queries (elquery--parse-union query-string)))
     (elquery-tree-flatten-until 'elquery-elp
-                                (cl-remove-if-not 'identity
-                                                  (mapcar (lambda (query)
-                                                            (elquery--$ query tree t))
-                                                          queries)))))
+                                (-non-nil (--map (elquery--$ it tree t) queries)))))
 
 (defun elquery--write-props (node)
   "Return a string representing the properties of NODE."
   (let ((props (elquery-props node)))
     (if (not props) ""
-      (s-concat " " (s-join " " (mapcar (lambda (key)
-                                          (format "%s=\"%s\""
-                                                  (elquery--kw-to-string key)
-                                                  (plist-get props key)))
-                                        (elquery--plist-keys props)))))))
+      (s-concat " " (s-join " " (--map (format "%s=\"%s\""
+                                               (elquery--kw-to-string it)
+                                               (plist-get props it))
+                                       (elquery--plist-keys props)))))))
 
 (defun elquery--indent-insert (string depth whitespace?)
   "Insert the proper amount of indentation for STRING.
