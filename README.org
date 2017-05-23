@@ -31,6 +31,8 @@ It's like jQuery, but way less useful. Given this example HTML file,
   representation of its AST. Use ~(elq-...)~ to manipulate this AST.
 - ~(elq-write TREE)~ - Return a string of the html representation of TREE and its
   children.
+- ~(elq-fmt TREE)~ - Return a string of the html-representation of the topmost
+  node of TREE, without its children or closing tag.
 *** DOM Traversal
 - ~(elq-$ SELECTOR TREE)~ - Return a list of subtrees of TREE which matches the
   query string. Currently, the element name, id, class, and property values are

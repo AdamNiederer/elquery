@@ -397,5 +397,10 @@ If WHITESPACE? is non-nil, insert indentation and newlines according to
     (elquery--write tree 0 whitespace?)
     (buffer-string)))
 
+(defun elquery-fmt (tree)
+  "Return an html string representing the top level element of TREE."
+  (if (not tree) "nil"
+    (format "<%s%s>" (elquery-el tree) (elquery--write-props tree))))
+
 (provide 'elquery)
 ;;; elquery.el ends here
