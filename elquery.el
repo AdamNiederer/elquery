@@ -235,7 +235,7 @@ Argument TREE is the libxml tree to convert."
       `(:el nil :text ,tree :children nil :parent ,parent)
     (let ((self (append (list :el (prin1-to-string (car tree)))
                         (list :text (--reduce (if (stringp it) (concat acc it) acc)
-                                              (cons "" (cl-cddr tree))))
+                                              (cons "" (cddr tree))))
                         (list :props (elquery--alist-to-plist (cl-second tree)))
                         (list :children nil)
                         (list :parent nil))))
