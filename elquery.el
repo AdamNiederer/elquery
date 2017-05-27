@@ -79,7 +79,7 @@ This does not preserve the order of the elements."
 
 (defun elquery--alist-to-plist (list)
   "Convert alist LIST to a plist, preserving all key-value relationships."
-  (--reduce (append acc (list (elquery--to-kw (car it))) (cdr it))
+  (--reduce (append acc (list (elquery--to-kw (car it))) (list (cdr it)))
             (cons '() list)))
 
 (defun elquery--sym-to-kw (sym)
