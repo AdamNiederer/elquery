@@ -112,13 +112,20 @@ This does not preserve the order of the elements."
       (setcdr ptr (list kw))
       (setcdr (cdr ptr) (list val)))))
 
-(defun elquery--plist-remove-if (list pred)
+(defun elquery--plist-remove-if (pred list)
   "Return a copy of LIST with all keys satisfying PRED removed."
-  (let ((ignore-next nil))
-    (--remove (cond (ignore-next (progn (setq ignore-next nil) t))
-                    ((funcall pred it) (progn (setq ignore-next t) t))
-                    (t nil))
+  (let ((ignore-next nil)
+        (remove-next nil))
+    (--remove (cond (remove-next (progn (setq remove-next nil) t))
+                    (ignore-next (progn (setq ignore-next nil) nil))
+                    ((funcall pred it) (progn (setq remove-next t) t))
+                    (t (progn (setq ignore-next t) nil)))
               list)))
+
+(defun elquery--plist-map (fn list)
+  "Apply FN to all key-value pairs in LIST, a list half as long as the original."
+  (if (null list) nil
+    (cons (funcall fn (car list) (cadr list)) (elquery--plist-map fn (cddr list)))))
 
 (defun elquery--plist-keys (list)
   "Return a list of keys from plist LIST."
@@ -158,13 +165,18 @@ If KEYS is supplied, only test keys from that list."
   "Return a list of NODE's properties (id, class, data*, etc)."
   (plist-get node :props))
 
+(defun elquery-attrs (node)
+  "Return a list of NODE's properies, without its classes and id."
+  (elquery--plist-remove-if (lambda (it) (member it '(:id :class)))
+                            (elquery-props node)))
+
 (defun elquery-children (node)
   "Return a list of the children of NODE."
   (plist-get node :children))
 
 (defun elquery-next-children (node)
   "Return a list of children of NODE with their children removed."
-  (mapcar (lambda (e) (append '(:children nil) e)) (elquery-children node)))
+  (--map (append '(:children nil) it) (elquery-children node)))
 
 (defun elquery-siblings (node)
   "Return a list of NODE's siblings, including NODE."
@@ -225,7 +237,7 @@ If VAL is supplied, destructively set NODE's data-KEY property to VAL"
     (insert-file-contents file)
     (let ((tree (libxml-parse-html-region (point-min) (point-max))))
       (thread-last tree
-        (elquery-tree-remove-if 'elquery--whitespace?)
+        (--tree-map (if (stringp it) (s-trim (s-collapse-whitespace it)) it))
         (elquery--parse-libxml-tree nil)))))
 
 (defun elquery--parse-libxml-tree (parent tree)
@@ -242,9 +254,8 @@ Argument TREE is the libxml tree to convert."
                         (list :children nil)
                         (list :parent nil))))
       (elquery--plist-set! self :parent parent) ; We can't do functional stuff here because we need a circular list, which requires messing with pointers
-      (elquery--plist-set! self :children (mapcar (lambda (e)
-                                                    (elquery--parse-libxml-tree self e))
-                                                  (cdr (cdr tree))))
+      (elquery--plist-set! self :children (--map (elquery--parse-libxml-tree self it)
+                                                 (cdr (cdr tree))))
       self)))
 
 (defun elquery--intersects? (query tree)
@@ -255,12 +266,13 @@ Argument TREE is the libxml tree to convert."
        (or (not (elquery-classes query))
            (elquery--subset? (elquery-classes query) (elquery-classes tree)))
        (or (not (elquery-props query))
+           (not (--remove (equal it :class) (elquery--plist-keys (elquery-props query))))
            (elquery--plist-equal (elquery-props query)
                                  (elquery-props tree)
-                                 (--filter (not (equal it :class))
+                                 (--remove (equal it :class)
                                            (elquery--plist-keys (elquery-props query)))))))
 
-(defconst elquery--el-re "^[A-Za-z0-9\-]+?")
+(defconst elquery--el-re "^[A-Za-z0-9\-]+")
 (defconst elquery--classes-re "\\.\\([a-zA-Z0-9\-_]+\\)")
 (defconst elquery--id-re "#\\([a-zA-Z0-9\-_]+\\)")
 (defconst elquery--attr-re "\\[\\([A-z\-]+\\)=\\(.+?\\)\\]")
@@ -288,6 +300,14 @@ For example, span#kek.bur[foo=bar]"
    ((equal string "+") :next-sibling)
    ((equal string "~") :sibling)
    (t :child)))
+
+(defun elquery--kw-rel (kw)
+  "Return a relatinoship operator for the keyword KW."
+  (cond
+   ((equal kw :next-child) ">")
+   ((equal kw :next-sibling) "+")
+   ((equal kw :sibling) "~")
+   (t " ")))
 
 (defun elquery--parse-heirarchy (string)
   "Return a plist representing a heirarchical structure in a query STRING.
@@ -405,6 +425,33 @@ If WHITESPACE? is non-nil, insert indentation and newlines according to
   "Return an html string representing the top level element of TREE."
   (if (not tree) "nil"
     (format "<%s%s>" (elquery-el tree) (elquery--write-props tree))))
+
+(defun elquery--fmt-union (query)
+  "Return a query string for the given query QUERY."
+  (s-join ", " (-map 'elquery--fmt-heirarchy query)))
+
+(defun elquery--fmt-intersection (query)
+  "Return a query string for the given query intesrection QUERY.
+Always of the form el-name#id.class[key=val], with null elements omitted."
+  (concat (or (elquery-el query) "")
+          (and (elquery-id query) (concat "#" (elquery-id query)))
+          (s-join "" (--map (concat "." it) (elquery-classes query)))
+          (s-join "" (elquery--plist-map (lambda (a b)
+                                           (format "[%s=%s]" (elquery--kw-to-string a) b))
+                                         (elquery-attrs query)))))
+
+(defun elquery--pad-operator (string)
+  "Return a padded version of the inheritance operator STRING."
+  (if (equal string " ") " "
+    (s-concat " " string " ")))
+
+(defun elquery--fmt-heirarchy (query)
+  "Return a query string for the given query heirarchy QUERY."
+  (if (null query) ""
+    (s-concat (elquery--fmt-intersection query)
+              (if (null (elquery-children query)) ""
+                (s-concat (elquery--pad-operator (elquery--kw-rel (plist-get query :rel)))
+                          (elquery--fmt-heirarchy (elquery-children query)))))))
 
 (provide 'elquery)
 ;;; elquery.el ends here
