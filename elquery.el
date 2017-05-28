@@ -115,9 +115,9 @@ This does not preserve the order of the elements."
 (defun elquery--plist-remove-if (list pred)
   "Return a copy of LIST with all keys satisfying PRED removed."
   (let ((ignore-next nil))
-    (--remove (cond ((ignore-next (progn (setq ignore-next nil) t))
-                     (funcall pred it) (progn (setq ignore-next t) t)
-                     (t nil)))
+    (--remove (cond (ignore-next (progn (setq ignore-next nil) t))
+                    ((funcall pred it) (progn (setq ignore-next t) t))
+                    (t nil))
               list)))
 
 (defun elquery--plist-keys (list)
@@ -130,12 +130,14 @@ This does not preserve the order of the elements."
 (defun elquery--plist-equal (a b &optional keys)
   "Return whether plists A and B are equal in content.
 If KEYS is supplied, only test keys from that list."
-  ;; TODO: Make this not O(n^2)
-  (let ((keys (or keys (-union (elquery--plist-keys a) (elquery--plist-keys b))))
-        (iseq t))
-    (dolist (key keys iseq)
-      (when (not (equal (plist-get a key) (plist-get b key)))
-        (setq iseq nil)))))
+  (--reduce (and acc (equal (plist-get a it) (plist-get b it)))
+            (cons t (or keys (-union (elquery--plist-keys a) (elquery--plist-keys b))))))
+
+(defun elquery--plist-subset? (a b &optional keys)
+  "Return whether plist A is a subset of plist B are equal in content.
+If KEYS is supplied, only test keys from that list."
+  (--reduce (and acc (equal (plist-get a it) (plist-get b it)))
+            (cons t (or keys (-union (elquery--plist-keys a) (elquery--plist-keys b))))))
 
 (defun elquery--subset? (sub set)
   "Return whether the elements of SUB is a subset of the elements of SET."
@@ -247,21 +249,21 @@ Argument TREE is the libxml tree to convert."
 
 (defun elquery--intersects? (query tree)
   "Return whether QUERY matches the head element of TREE."
-  (and (if (not (elquery-el query)) t
-         (equal (elquery-el tree) (elquery-el query)))
-       (if (not (elquery-classes query)) t
-         (elquery--subset? (elquery-classes query) (elquery-classes tree)))
-       (let ((keys (--filter (equal it :class)
-                             (elquery--plist-keys (elquery-props query)))))
-         (if (not keys) t
-           (elquery--plist-equal (elquery-props tree)
-                                 (elquery-props query)
-                                 keys)))))
+  (and tree
+       (or (not (elquery-el query))
+           (equal (elquery-el tree) (elquery-el query)))
+       (or (not (elquery-classes query))
+           (elquery--subset? (elquery-classes query) (elquery-classes tree)))
+       (or (not (elquery-props query))
+           (elquery--plist-equal (elquery-props query)
+                                 (elquery-props tree)
+                                 (--filter (not (equal it :class))
+                                           (elquery--plist-keys (elquery-props query)))))))
 
-(defconst elquery--el-re "^[A-Za-z0-9\\-]+")
-(defconst elquery--classes-re "\\.\\([a-zA-Z0-9]+\\)")
-(defconst elquery--id-re "#\\([a-zA-Z0-9]+\\)")
-(defconst elquery--attr-re "\\[\\([A-z\\-]+\\)=\\(.+?\\)\\]")
+(defconst elquery--el-re "^[A-Za-z0-9\-]+?")
+(defconst elquery--classes-re "\\.\\([a-zA-Z0-9\-_]+\\)")
+(defconst elquery--id-re "#\\([a-zA-Z0-9\-_]+\\)")
+(defconst elquery--attr-re "\\[\\([A-z\-]+\\)=\\(.+?\\)\\]")
 (defconst elquery--heirarchy-re (concat "^\\([^[:space:]]+\\)" ; Head of heirarchy tree
                                         "[[:space:]]*\\([>~+]?\\)[[:space:]]*" ; Relationship operator
                                         "\\(.+\\)?")) ; Rest of tree (recursively parsed)
@@ -342,7 +344,9 @@ If CAN-RECURSE is set, continue down the tree until a matching element is found.
    ;; A match without children in the query will return the tree, but we must
    ;; still recurse to find any matching children in tree if we aren't looking
    ;; for siblings or next-children
-   ((and can-recurse (elquery--intersects? query tree) (not (elquery-children query)))
+   ((and can-recurse
+         (elquery--intersects? query tree)
+         (not (elquery-children query)))
     (append (list tree) (-non-nil (--map (elquery--$ query it t)
                                          (elquery-children tree)))))
    ;; No match and a recurse flag means we can continue down the tree and see if
