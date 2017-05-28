@@ -1,4 +1,5 @@
 (load-file "elquery.el")
+(require 'elquery)
 
 (ert-deftest elquery--query-parser-test ()
   (let ((queries '("kek"
@@ -11,12 +12,12 @@
       (should (equal query (elquery--fmt-union (elquery--parse-union query)))))))
 
 (ert-deftest elquery--read-test ()
-  (let ((tree (elquery-read-file "test.html")))
+  (let ((tree (elquery-read-file "test/test.html")))
     (should (equal "input" (elquery-el (car (elquery-$ "#color-input" tree)))))
     (should (equal "console.log(\"Hello, world!\")" (s-trim (elquery-text (car (elquery-$ "script" tree))))))))
 
 (ert-deftest elquery--write-test ()
-  (let ((tree (elquery-read-file "test.html"))
+  (let ((tree (elquery-read-file "test/test.html"))
         (sgml-basic-offset 2))
     ;; TODO: Make self-closing tags work. For now, just ensure they don't crash.
     (elquery-write tree t)
