@@ -240,6 +240,15 @@ If VAL is supplied, destructively set NODE's data-KEY property to VAL"
         (--tree-map (if (stringp it) (s-trim (s-collapse-whitespace it)) it))
         (elquery--parse-libxml-tree nil)))))
 
+(defun elquery-read-string (string)
+  "Return the AST of the HTML string STRING as a plist."
+  (with-temp-buffer
+    (insert-string string)
+    (let ((tree (libxml-parse-html-region (point-min) (point-max))))
+      (thread-last tree
+        (--tree-map (if (stringp it) (s-trim (s-collapse-whitespace it)) it))
+        (elquery--parse-libxml-tree nil)))))
+
 (defun elquery--parse-libxml-tree (parent tree)
   "Convert libxml's alist-heavy and position-dependant format to a plist format.
 Additionally, remove some useless whitespace nodes, and recursively set nodes'
