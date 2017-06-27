@@ -22,13 +22,16 @@ It's like jQuery, but way less useful. Given this example HTML file,
             (elq-$ ".kek" html))            ; => ("body" "body" "html" "head" "html")
     (mapcar (lambda (el) (mapcar 'elq-el (elq-siblings el)))
             (elq-$ ".kek" html))            ; => (("h1" "input" "iframe") ("h1" "input" "iframe") ("head" "body") ("title") ("head" "body"))
-    (elq-$ ".kek html")                     ; => Hope you didn't like your messages buffer
+    (elq-$ ".kek" html)                     ; => Hope you didn't like your messages buffer
     (elq-write html nil))                   ; => "<html style=\"height: 100vh\"> ... </html>"
 #+END_SRC
 ** Functions
 *** I/O and Parsing
 - ~(elq-read-file FILE)~ - Parse an HTML file, returning an internal
   representation of its AST. Use ~(elq-...)~ to manipulate this AST.
+- ~(elq-read-string STRING)~ - Parse an HTML string, returning an
+   internal representation of its AST. Use ~(elq-...)~ to manipulate this
+   AST.
 - ~(elq-write TREE)~ - Return a string of the html representation of TREE and its
   children.
 - ~(elq-fmt TREE)~ - Return a string of the html-representation of the topmost
