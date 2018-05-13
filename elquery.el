@@ -311,7 +311,7 @@ For example, span#kek.bur[foo=bar]"
    (t :child)))
 
 (defun elquery--kw-rel (kw)
-  "Return a relatinoship operator for the keyword KW."
+  "Return a relationship operator for the keyword KW."
   (cond
    ((equal kw :next-child) ">")
    ((equal kw :next-sibling) "+")
