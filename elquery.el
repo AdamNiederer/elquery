@@ -261,6 +261,7 @@ If VAL is supplied, destructively set NODE's data-KEY property to VAL"
 (defun elquery-read-string (string)
   "Return the AST of the HTML string STRING as a plist."
   (with-temp-buffer
+    (set-buffer-multibyte nil) ; ref debbugs.gnu.org/cgi/bugreport.cgi?bug=31427
     (insert-string string)
     (let ((tree (libxml-parse-html-region (point-min) (point-max))))
       (thread-last tree
