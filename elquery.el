@@ -469,6 +469,8 @@ Always of the form el-name#id.class[key=val], with null elements omitted."
                                            (format "[%s=%s]" (elquery--kw-to-string a) b))
                                          (elquery-attrs query)))))
 
+(defalias 'elquery-pprint 'elquery--fmt-intersection)
+
 (defun elquery--pad-operator (string)
   "Return a padded version of the inheritance operator STRING."
   (if (equal string " ") " "
