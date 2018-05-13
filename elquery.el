@@ -192,6 +192,14 @@ If INCLUDE-EMPTY is not nil, also consider empty text nodes."
 If INCLUDE-EMPTY is not nil, also consider empty text nodes."
   (elquery-children (elquery-parent node) :include-empty include-empty))
 
+(cl-defun elquery-next-sibling (node &key include-empty)
+  "Return the sibling immediately after NODE.
+
+If INCLUDE-EMPTY is not nil, also consider empty text nodes."
+  (let ((siblings (elquery-siblings node :include-empty include-empty)))
+    (when (-find-index (-partial #'eq node) siblings)
+      (nth (1+ (-find-index (-partial #'eq node) siblings)) siblings))))
+
 (defun elquery-prop (node prop &optional val)
   "In NODE, return the value of PROP.
 If VAL is supplied, destructively set PROP to VAL."
@@ -349,14 +357,14 @@ For example, #foo .bar > #bur[name=baz] returns
   (mapcar 'elquery--parse-heirarchy (s-split ", *" string)))
 
 (defun elquery--$-next (query tree)
-  "For QUERY, Return a subtree of TREE corresponding to :rel in QUERY."
-  (cond
-   ((equal (plist-get query :rel) :next-child) (elquery-children tree))
-   ((equal (plist-get query :rel) :next-sibling) (error "TODO"))
-   ;; TODO: Does returning the siblings INCLUDING the element cause
-   ;; issues with selectors like el-type ~ el-type?
-   ((equal (plist-get query :rel) :sibling) (elquery-siblings tree))
-   ((equal (plist-get query :rel) :child) (elquery-children tree))))
+  "For QUERY, Return a list of subtrees of TREE corresponding to :rel in QUERY."
+  (case (plist-get query :rel)
+    (:next-child (elquery-children tree))
+    (:next-sibling (list (elquery-next-sibling tree)))
+    ;; TODO: Does returning the siblings INCLUDING the element cause
+    ;; issues with selectors like el-type ~ el-type?
+    (:sibling (elquery-siblings tree))
+    (:child (elquery-children tree))))
 
 (defun elquery--$-recurse? (query)
   "Return whether recursion until finding a matching element is allowed.

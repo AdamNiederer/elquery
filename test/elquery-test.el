@@ -30,5 +30,14 @@
                    (elquery-fmt (car (elquery-$ ".form-section" tree)))))
     (should (equal "<script>" (elquery-fmt (car (elquery-$ "script" tree)))))))
 
+(ert-deftest elquery--next-sibling-test ()
+  (let ((tree (elquery-read-file "test/test.html")))
+    (should (eq (elquery-next-sibling (car (elquery-$ "form h1" tree)))
+                (car (elquery-$ "form input" tree))))))
+
+(ert-deftest elquery--$-+-test ()
+  (let ((tree (elquery-read-file "test/test.html")))
+    (should (equal "input" (elquery-el (car (elquery-$ "form h1 + *" tree)))))))
+
 (provide 'elquery-test)
 ;;; elquery-test.el ends here

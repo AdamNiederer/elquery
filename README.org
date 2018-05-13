@@ -45,6 +45,7 @@ It's like jQuery, but way less useful. Given this example HTML file,
 - ~(elquery-siblings NODE)~ - Return a list of the siblings of NODE
 - ~(elquery-next-children NODE)~ - Return a list of children of NODE with the
   children's children removed.
+- ~(elquery-next-sibling NODE)~ - Return the sibling immediately following NODE
 *** Common Trait Selection
 - ~(elquery-class? NODE CLASS)~ - Return whether NODE has the class CLASS
 - ~(elquery-id NODE)~ - Return the id of NODE
@@ -97,8 +98,10 @@ property equality tests.
   "name" is "user"
 - ~#foo > .bar~ - Select all elements with class "bar" whose immediate parent
   has id "foo"
-- ~#foo ~ .bar~ - Select all elements with class "bar" are siblings of an
-  element with id "foo"
+- ~#foo ~ .bar~ - Select all elements with class "bar" which are siblings of
+  elements with id "foo"
+- ~#foo + .bar~ - Select all elements with class "bar" which immediately follow
+  elements with id "foo"
 
 All permutations of union, intersection, child, next-child, and sibling
 relationships are supported.
