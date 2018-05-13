@@ -460,7 +460,7 @@ If WHITESPACE? is non-nil, insert indentation and newlines according to
   (s-join ", " (-map 'elquery--fmt-heirarchy query)))
 
 (defun elquery--fmt-intersection (query)
-  "Return a query string for the given query intesrection QUERY.
+  "Return a query string for the given query intersection QUERY.
 Always of the form el-name#id.class[key=val], with null elements omitted."
   (concat (or (elquery-el query) "")
           (and (elquery-id query) (concat "#" (elquery-id query)))
