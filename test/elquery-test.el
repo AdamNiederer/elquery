@@ -2,7 +2,8 @@
 (require 'elquery)
 
 (ert-deftest elquery--query-parser-test ()
-  (let ((queries '("kek"
+  (let ((queries '("*"
+                   "kek"
                    ".bur"
                    "#kek.bur"
                    ".kek > bur"

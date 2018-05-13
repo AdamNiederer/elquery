@@ -271,6 +271,7 @@ Argument TREE is the libxml tree to convert."
   "Return whether QUERY matches the head element of TREE."
   (and tree
        (or (not (elquery-el query))
+           (equal "*" (elquery-el query))
            (equal (elquery-el tree) (elquery-el query)))
        (or (not (elquery-classes query))
            (elquery--subset? (elquery-classes query) (elquery-classes tree)))
@@ -281,7 +282,7 @@ Argument TREE is the libxml tree to convert."
                                  (--remove (equal it :class)
                                            (elquery--plist-keys (elquery-props query)))))))
 
-(defconst elquery--el-re "^[A-Za-z0-9\-]+")
+(defconst elquery--el-re "^[A-Za-z0-9*\-]+")
 (defconst elquery--classes-re "\\.\\([a-zA-Z0-9\-_]+\\)")
 (defconst elquery--id-re "#\\([a-zA-Z0-9\-_]+\\)")
 (defconst elquery--attr-re "\\[\\([A-z\-]+\\)=\\(.+?\\)\\]")
