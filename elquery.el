@@ -170,17 +170,27 @@ If KEYS is supplied, only test keys from that list."
   (elquery--plist-remove-if (lambda (it) (member it '(:id :class)))
                             (elquery-props node)))
 
-(defun elquery-children (node)
-  "Return a list of the children of NODE."
-  (plist-get node :children))
+(cl-defun elquery-children (node &key include-empty)
+  "Return a list of the children of NODE.
 
-(defun elquery-next-children (node)
-  "Return a list of children of NODE with their children removed."
-  (--map (append '(:children nil) it) (elquery-children node)))
+If INCLUDE-EMPTY is not nil, also consider empty text nodes."
+  (if include-empty (plist-get node :children)
+    (-filter (lambda (el) (or (elquery-elp el)
+                         (not (string-empty-p (elquery-text el)))))
+             (plist-get node :children))))
 
-(defun elquery-siblings (node)
-  "Return a list of NODE's siblings, including NODE."
-  (plist-get (plist-get node :parent) :children))
+(cl-defun elquery-next-children (node &key include-empty)
+  "Return a list of children of NODE with their children removed.
+
+If INCLUDE-EMPTY is not nil, also consider empty text nodes."
+  (--map (append '(:children nil) it)
+         (elquery-children node :include-empty include-empty)))
+
+(cl-defun elquery-siblings (node &key include-empty)
+  "Return a list of NODE's siblings, including NODE.
+
+If INCLUDE-EMPTY is not nil, also consider empty text nodes."
+  (elquery-children (elquery-parent node) :include-empty include-empty))
 
 (defun elquery-prop (node prop &optional val)
   "In NODE, return the value of PROP.
