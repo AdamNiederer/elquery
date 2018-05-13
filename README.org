@@ -27,123 +27,102 @@ It's like jQuery, but way less useful. Given this example HTML file,
 #+END_SRC
 ** Functions
 *** I/O and Parsing
-- ~(elq-read-file FILE)~ - Parse an HTML file, returning an internal
-  representation of its AST. Use ~(elq-...)~ to manipulate this AST.
-- ~(elq-read-string STRING)~ - Parse an HTML string, returning an
-   internal representation of its AST. Use ~(elq-...)~ to manipulate this
-   AST.
-- ~(elq-write TREE)~ - Return a string of the html representation of TREE and its
-  children.
-- ~(elq-fmt TREE)~ - Return a string of the html-representation of the topmost
-  node of TREE, without its children or closing tag.
+- ~(elquery-read-file FILE)~ - Parse an HTML file, returning an internal
+  representation of its AST. Use ~(elquery-...)~ to manipulate this AST.
+- ~(elquery-read-string STRING)~ - Parse an HTML string, returning an internal
+  representation of its AST. Use ~(elquery-...)~ to manipulate this AST.
+- ~(elquery-write TREE)~ - Return a string of the html representation of TREE
+  and its children.
+- ~(elquery-fmt TREE)~ - Return a string of the html-representation of the
+  topmost node of TREE, without its children or closing tag.
 *** DOM Traversal
-- ~(elq-$ SELECTOR TREE)~ - Return a list of subtrees of TREE which matches the
-  query string. Currently, the element name, id, class, and property values are
-  supported, along with some set operations and hierarchy relationships. See
+- ~(elquery-$ SELECTOR TREE)~ - Return a list of subtrees of TREE which matches
+  the query string. Currently, the element name, id, class, and property values
+  are supported, along with some set operations and hierarchy relationships. See
   Selector Syntax for a more detailed overview of valid selectors.
-- ~(elq-parent NODE)~ - Return the parent of NODE
-- ~(elq-children NODE)~ - Return a list of the children of NODE
-- ~(elq-siblings NODE)~ - Return a list of the siblings of NODE
-- ~(elq-next-children NODE)~ - Return a list of children of NODE with the
+- ~(elquery-parent NODE)~ - Return the parent of NODE
+- ~(elquery-children NODE)~ - Return a list of the children of NODE
+- ~(elquery-siblings NODE)~ - Return a list of the siblings of NODE
+- ~(elquery-next-children NODE)~ - Return a list of children of NODE with the
   children's children removed.
 *** Common Trait Selection
-- ~(elq-class? NODE CLASS)~ - Return whether NODE has the class CLASS
-- ~(elq-id NODE)~ - Return the id of NODE
-- ~(elq-classes NODE)~ - Return a list of the classes of NODE
-- ~(elq-text NODE)~ - Return the text contained in NODE. If there are multiple
-  text elements, for example, ~<span>Hello <span>cruel</span> world</span>~,
-  return the concatenation of these nodes, ~Hello  world~, with two spaces
-  between ~Hello~ and ~world~
+- ~(elquery-class? NODE CLASS)~ - Return whether NODE has the class CLASS
+- ~(elquery-id NODE)~ - Return the id of NODE
+- ~(elquery-classes NODE)~ - Return a list of the classes of NODE
+- ~(elquery-text NODE)~ - Return the text contained in NODE. If there are
+  multiple text elements, for example, ~<span>Hello <span>cruel</span>
+  world</span>~, return the concatenation of these nodes, ~Hello world~, with
+  two spaces between ~Hello~ and ~world~
 *** Property Modification
-- ~(elq-props NODE)~ - Return a plist of this node's properties, including its
-  id, class, and data attributes.
-- ~(elq-data NODE KEY &optional VAL)~ - Return the value of NODE's data-KEY
+- ~(elquery-props NODE)~ - Return a plist of this node's properties, including
+  its id, class, and data attributes.
+- ~(elquery-data NODE KEY &optional VAL)~ - Return the value of NODE's data-KEY
   property. If VAL is supplied, destructively set NODE's data-KEY property to
-  VAL. For example, on the node ~<span data-name="adam">~,
-  ~(elq-data node "name")~ would return ~adam~
-- ~(elq-prop NODE PROP &optional VAL)~ - Return the value of PROP in NODE. If
-  VAL is supplied, destructively set PROP to VAL.
-- ~(elq-rm-prop NODE)~ - Destructively remove PROP from NODE
+  VAL. For example, on the node ~<span data-name="adam">~, ~(elquery-data node
+  "name")~ would return ~adam~
+- ~(elquery-prop NODE PROP &optional VAL)~ - Return the value of PROP in
+  NODE. If VAL is supplied, destructively set PROP to VAL.
+- ~(elquery-rm-prop NODE)~ - Destructively remove PROP from NODE
 *** Predicates
-- ~(elq-elp OBJ)~ - Return whether OBJ represents a DOM node
+- ~(elquery-elp OBJ)~ - Return whether OBJ represents a DOM node
 *** General Tree Functions
 Because HTML is a large tree representation, elq includes some general tree
 manipulation functions which it uses internally, and may be useful to you when
 dealing with the DOM.
 
-- ~(elq-tree-remove-if pred tree)~ - Remove all elements from TREE if they
+- ~(elquery-tree-remove-if pred tree)~ - Remove all elements from TREE if they
   satisfy PRED. Preserves the structure and order of the tree.
-- ~(elq-tree-remove-if-not pred tree)~ - Remove all elements from TREE if they
-  do not satisfy PRED. Preserves the structure and order of the tree.
-- ~(elq-tree-mapcar fn tree)~ - Apply FN to all elements in TREE
-- ~(elq-tree-reduce fn tree)~ - Perform an in-order reduction of TREE with FN.
-  Equivalent to a reduction on a flattened tree.
-- ~(elq-tree-flatten tree)~ - Flatten the tree, removing all list nesting and
-  leaving a list of only atomic elements. This does not preserve the order of
-  the elements.
-- ~(elq-tree-flatten-until pred tree)~ - Flatten the tree, but treat elements
-  matching PRED as atomic elements, not preserving order.
+- ~(elquery-tree-remove-if-not pred tree)~ - Remove all elements from TREE if
+  they do not satisfy PRED. Preserves the structure and order of the tree.
+- ~(elquery-tree-mapcar fn tree)~ - Apply FN to all elements in TREE
+- ~(elquery-tree-reduce fn tree)~ - Perform an in-order reduction of TREE with
+  FN.  Equivalent to a reduction on a flattened tree.
+- ~(elquery-tree-flatten tree)~ - Flatten the tree, removing all list nesting
+  and leaving a list of only atomic elements. This does not preserve the order
+  of the elements.
+- ~(elquery-tree-flatten-until pred tree)~ - Flatten the tree, but treat
+  elements matching PRED as atomic elements, not preserving order.
 *** Selector Syntax
 We support a significant subset of jQuery's selector syntax. If I ever decide to
-make this project even more web-scale, I'll add colon selectors and more property
-equality tests.
+make this project even more web-scale, I'll add colon selectors and more
+property equality tests.
 
 - ~#foo~ - Select all elements with the id "foo"
 - ~.bar~ - Select all elements with the class "bar"
 - ~[name=user]~ - Select all elements whose "name" property is "user"
 - ~#foo.bar[name=user]~ - Logical intersection of the above three selectors.
   Select all elements whose id is "foo", class is ".bar", and "name" is "user"
-- ~#foo .bar, [name=user]~ - Select all elements with the class "bar" in the subtrees
-  of all elements with the id "foo", along with all elements whose "name" is "user"
-- ~#foo > .bar~ - Select all elements with class "bar" whose immediate parent has
-  id "foo"
-- ~#foo ~ .bar~ - Select all elements with class "bar" are siblings of an element
-  with id "foo"
+- ~#foo .bar, [name=user]~ - Select all elements with the class "bar" in the
+  subtrees of all elements with the id "foo", along with all elements whose
+  "name" is "user"
+- ~#foo > .bar~ - Select all elements with class "bar" whose immediate parent
+  has id "foo"
+- ~#foo ~ .bar~ - Select all elements with class "bar" are siblings of an
+  element with id "foo"
 
 All permutations of union, intersection, child, next-child, and sibling
 relationships are supported.
 *** Internal Data Structure
 Each element is a plist, which is guaranteed to have at least one key-value
 pair, and an ~:el~ key. All elements of this plist are accessible with the above
-functions, but the internal representation of a document node is below for anybody
-brave enough to hack on this:
+functions, but the internal representation of a document node is below for
+anybody brave enough to hack on this:
 
 - ~:el~ - A string containing the name of the element. If the node is a "text
   node", ~:el is nil~
 - ~:text~ - A string containing the concatenation of all text elements
   immediately below this one on the tree. For example, the node representing
-  ~<span>Hello <span>cruel</span> world</span>~ would be ~Hello  world".
+  ~<span>Hello <span>cruel</span> world</span>~ would be ~Hello world".
 - ~:props~ - A plist of HTML properties for each element, including but not
   limited to its ~:id~, ~class~, ~data-*~, and ~name~ attributes.
 - ~:parent~ - A pointer to the parent element. Emacs thinks this is a list.
 - ~:children~ - A list of elements immediately below this one on the tree,
   including text nodes.
 
-The data structure used in queries via ~(elq-$)~ is very similar, although
+The data structure used in queries via ~(elquery-$)~ is very similar, although
 it doesn't have ~:text~ keyword (PRs welcome!) and has an extra ~:rel~ keyword,
 which specifies the relationship between the query and its ~:children~. ~:rel~
 may be one of ~:next-child~, ~:child~, ~next-sibling~, and ~:sibling~. This is
-used by the internal function ~(elq--$)~ which must determine whether it can
+used by the internal function ~(elquery--$)~ which must determine whether it can
 continue recursion down the tree based on the relationship of two intersections
 in a selector.
-** Future
-Vue.el coming soon
-** Is it web scale?
-A couple of the functions are O(n^2) because of laziness. Of course, the first
-problem you'll run into when using this in production is getting your users to
-download Emacs to view your site.
-
-Work has begun on standardizing the ~<nomacs>~ tag, which will allow you to
-gently warn users who either have Emacs Lisp support disabled in their browser,
-or are running an antiquated browser like Firefox 52.
-** Browser Support
-HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA
-HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA
-HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA
-HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHA
-** So, is this actually useful?
-I'd imagine an HTML linter using this would be pretty cool. Paredit for HTML? If
-~web-mode~ pulls this as a dependency I'll put it on my resume.
-
-I'd imagine any project with this amount of recursion and pointer-flogging could
-be useful to somebody, at least.
