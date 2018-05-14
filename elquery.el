@@ -368,7 +368,7 @@ For example, #foo .bar > #bur[name=baz] returns
 (defun elquery--$-next (query tree)
   "For QUERY, Return a list of subtrees of TREE corresponding to :rel in QUERY."
   (cl-case (plist-get query :rel)
-    (:next-child (elquery-children tree))
+    (:next-child (elquery-next-children tree))
     (:next-sibling (list (elquery-next-sibling tree)))
     ;; TODO: Does returning the siblings INCLUDING the element cause
     ;; issues with selectors like el-type ~ el-type?
