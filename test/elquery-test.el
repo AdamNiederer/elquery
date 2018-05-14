@@ -6,14 +6,22 @@
                    "kek"
                    ".bur"
                    "#kek.bur"
+                   "#kek.bur ~ .bur, div"
                    ".kek > bur"
                    "[data-id=kek] + bur > kek#bur.bar[foo=baz]")))
     ;; TODO: Should this work on ""?
     (dolist (query queries)
       (should (equal query (elquery--fmt-union (elquery--parse-union query)))))))
 
-(ert-deftest elquery--read-test ()
+(ert-deftest elquery--read-file-test ()
   (let ((tree (elquery-read-file "test/test.html")))
+    (should (equal "input" (elquery-el (car (elquery-$ "#color-input" tree)))))
+    (should (equal "console.log(\"Hello, world!\")" (s-trim (elquery-text (car (elquery-$ "script" tree))))))))
+
+(ert-deftest elquery--read-string-test ()
+  (let* ((string (with-temp-buffer (insert-file-contents "test/test.html")
+                                   (buffer-string)))
+         (tree (elquery-read-string string)))
     (should (equal "input" (elquery-el (car (elquery-$ "#color-input" tree)))))
     (should (equal "console.log(\"Hello, world!\")" (s-trim (elquery-text (car (elquery-$ "script" tree))))))))
 
