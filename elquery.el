@@ -417,7 +417,7 @@ If CAN-RECURSE is set, continue down the tree until a matching element is found.
 (defun elquery-$ (query-string tree)
   "Return a list of elements matching QUERY-STRING in the subtree of TREE."
   (let ((queries (elquery--parse-union query-string)))
-    (elquery-tree-flatten-until 'elquery-elp
+    (elquery-tree-flatten-until #'elquery-nodep
                                 (-non-nil (--map (elquery--$ it tree t) queries)))))
 
 (defun elquery--write-props (node)
