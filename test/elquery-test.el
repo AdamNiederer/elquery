@@ -23,7 +23,6 @@
     ;; TODO: Make self-closing tags work. For now, just ensure they don't crash.
     (elquery-write tree t)
     (elquery-write tree nil)
-    ;;
     (should (equal "<button id=\"color-submit-button\" type=\"submit\">"
                    (elquery-fmt (car (elquery-$ "button" tree)))))
     (should (equal "<section class=\"form-section\">"
@@ -38,6 +37,21 @@
 (ert-deftest elquery--$-+-test ()
   (let ((tree (elquery-read-file "test/test.html")))
     (should (equal "input" (elquery-el (car (elquery-$ "form h1 + *" tree)))))))
+
+(ert-deftest elquery--$->-test ()
+  (let ((tree (elquery-read-file "test/test.html")))
+    (should (equal nil (car (elquery-$ ".form-section > h1" tree))))
+    (should (equal "form" (elquery-el (car (elquery-$ ".form-section > *" tree)))))))
+
+(ert-deftest elquery--$--test ()
+  (let ((tree (elquery-read-file "test/test.html")))
+    (should (equal "h1" (elquery-el (car (elquery-$ ".form-section h1" tree)))))
+    (should (equal 4 (length (-filter #'elquery-elp (elquery-$ ".form-section *" tree)))))
+    (should (not (elquery-$ ".form-section h2" tree)))))
+
+(ert-deftest elquery--$-~-test ()
+  (let ((tree (elquery-read-file "test/test.html")))
+    (should (equal 3 (length (elquery-$ "#color-input ~ *" tree))))))
 
 (provide 'elquery-test)
 ;;; elquery-test.el ends here
