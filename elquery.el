@@ -156,9 +156,17 @@ If KEYS is supplied, only test keys from that list."
   (and (stringp s) (s-matches-p "^[[:space:]]*$" s)))
 
 ;; Predicates specific to elquery
-(defun elquery-elp (obj)
+(defun elquery-nodep (obj)
   "Return whether OBJ is a DOM element."
+  (member :el obj))
+
+(defun elquery-elp (obj)
+  "Return whether OBJ is a DOM element and is not a text node."
   (plist-get obj :el))
+
+(defun elquery-textp (obj)
+  "Return whether OBJ is a text node."
+  (and (elquery-nodep obj) (not (elquery-elp obj))))
 
 ;; Accessor Aliases on DOM nodes
 (defun elquery-props (node)
