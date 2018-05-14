@@ -1,4 +1,21 @@
 * elquery
+#+BEGIN_HTML
+<div>
+  <a href="https://www.gnu.org/licenses/gpl-3.0.en.html">
+    <img src="https://img.shields.io/badge/license-GPLv3-brightgreen.svg"/>
+  </a>
+  <a href="https://melpa.org/#/elquery>
+    <img src="https://melpa.org/packages/elquery-badge.svg"/>
+  </a>
+  <a href="https://codecov.io/gh/AdamNiederer/elquery">
+    <img src="https://codecov.io/gh/AdamNiederer/elquery/branch/master/graph/badge.svg"/>
+  </a>
+  <a href="https://travis-ci.org/AdamNiederer/elquery>
+    <img src="https://api.travis-ci.org/AdamNiederer/elquery.svg?branch=master"/>
+  </a>
+</div>
+#+END_HTML
+
 Write things. Do things.
 ** Usage
 It's like jQuery, but way less useful. Given this example HTML file,
