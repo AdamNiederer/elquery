@@ -4,10 +4,10 @@
   <a href="https://www.gnu.org/licenses/gpl-3.0.en.html">
     <img src="https://img.shields.io/badge/license-GPLv3-brightgreen.svg"/>
   </a>
-  <a href="https://melpa.org/#/elquery>
+  <a href="https://melpa.org/#/elquery">
     <img src="https://melpa.org/packages/elquery-badge.svg"/>
   </a>
-  <a href="https://codecov.io/gh/AdamNiederer/elquery">
+  <a style="filter: invert(100%);" href="https://codecov.io/gh/AdamNiederer/elquery">
     <img src="https://codecov.io/gh/AdamNiederer/elquery/branch/master/graph/badge.svg"/>
   </a>
   <a href="https://travis-ci.org/AdamNiederer/elquery">
