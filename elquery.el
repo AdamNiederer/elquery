@@ -363,7 +363,7 @@ For example, #foo .bar > #bur[name=baz] returns
 
 (defun elquery--parse-union (string)
   "Return a list of plists representing the query STRING."
-  (mapcar 'elquery--parse-heirarchy (s-split ", *" string)))
+  (mapcar 'elquery--parse-heirarchy (s-split ", " string)))
 
 (defun elquery--$-next (query tree)
   "For QUERY, Return a list of subtrees of TREE corresponding to :rel in QUERY."
