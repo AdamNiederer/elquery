@@ -386,11 +386,12 @@ If CAN-RECURSE is set, continue down the tree until a matching element is found.
   (cond
    ;; If we're out of stuff to search, we can't do anything else
    ((equal tree nil) nil)
-   ;; No children in the query, no children in the tree, and a match in the tree
-   ;; means we can return the leaf
+   ;; No children in the query, no searchable children in the tree, and a match
+   ;; in the tree means we can return the leaf
    ((and (elquery--intersects? query tree)
          (not (elquery-children query))
-         (not (elquery-children tree)))
+         (or (not can-recurse)
+             (not (elquery-children tree))))
     tree)
    ;; A match with children remaining in the query to find means we have to
    ;; recurse according to the query's heirarchy relationship
