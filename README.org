@@ -10,7 +10,7 @@
   <a href="https://codecov.io/gh/AdamNiederer/elquery">
     <img src="https://codecov.io/gh/AdamNiederer/elquery/branch/master/graph/badge.svg"/>
   </a>
-  <a href="https://travis-ci.org/AdamNiederer/elquery>
+  <a href="https://travis-ci.org/AdamNiederer/elquery">
     <img src="https://api.travis-ci.org/AdamNiederer/elquery.svg?branch=master"/>
   </a>
 </div>
