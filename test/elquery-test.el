@@ -29,5 +29,13 @@
                    (elquery-fmt (car (elquery-$ ".form-section" tree)))))
     (should (equal "<script>" (elquery-fmt (car (elquery-$ "script" tree)))))))
 
+(ert-deftest elquery--innertext-test ()
+  (let ((tree (elquery-read-file "test/test.html")))
+
+    (should (equal "Hello World! ExtraCode Special P"
+                   (elquery-innertext (car (elquery-$ ".multiline-section .e" (elquery-read-string document-content))))))
+    (should (equal "ExtraCode Special P"
+                   (elquery-innertext (car (elquery-$ ".multiline-section .d" (elquery-read-string document-content))))))))
+
 (provide 'elquery-test)
 ;;; elquery-test.el ends here

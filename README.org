@@ -46,6 +46,7 @@ It's like jQuery, but way less useful. Given this example HTML file,
 - ~(elq-siblings NODE)~ - Return a list of the siblings of NODE
 - ~(elq-next-children NODE)~ - Return a list of children of NODE with the
   children's children removed.
+- ~(elq-innertext NODE)~ - Return all Text from a NODE and its children
 *** Common Trait Selection
 - ~(elq-class? NODE CLASS)~ - Return whether NODE has the class CLASS
 - ~(elq-id NODE)~ - Return the id of NODE

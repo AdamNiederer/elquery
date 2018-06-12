@@ -210,6 +210,23 @@ If there are multiple text nodes in NODE
 these text nodes"
   (plist-get node :text))
 
+(defun elquery-innertext (node)
+  "Return the text content of node and it's children.
+This function will recurse down the tree given by NODE
+and find and concatenate all :text property values."
+  (let ((children-list (elquery-children node))
+        (result-string ""))
+    (if children-list
+        (while children-list
+          (if (elquery-children (car children-list))
+              (setq result-string (concat result-string " " (elquery-innertext (car children-list))))
+            (setq result-string (concat result-string " " (plist-get (car children-list) ':text))) )
+          (setq children-list (cdr children-list))))
+    (let ((string-length (length result-string)))
+      (if (> string-length 1)
+          (substring result-string 1 (length result-string))
+        "")) ))
+
 (defun elquery-classes (node)
   "Return a list of NODE's classes."
   (let ((classes (elquery-prop node :class)))
