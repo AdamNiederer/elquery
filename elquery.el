@@ -409,7 +409,7 @@ For example, #foo .bar > #bur[name=baz] returns
 (defun elquery--$-next (query tree)
   "For QUERY, Return a list of subtrees of TREE corresponding to :rel in QUERY."
   (cl-case (plist-get query :rel)
-    (:next-child (elquery-next-children tree))
+    (:next-child (elquery-children tree)) ;; Halting recursion is handled by --$-recurse?
     (:next-sibling (list (elquery-next-sibling tree)))
     ;; TODO: Does returning the siblings INCLUDING the element cause
     ;; issues with selectors like el-type ~ el-type?
@@ -434,7 +434,7 @@ If CAN-RECURSE is set, continue down the tree until a matching element is found.
          (or (not can-recurse)
              (not (elquery-children tree))))
     tree)
-   ;; A match with children remaining in the query to find means we have to
+   ;; A match with children remaining in the query means we have to
    ;; recurse according to the query's heirarchy relationship
    ((and (elquery--intersects? query tree)
          (elquery-children query))
