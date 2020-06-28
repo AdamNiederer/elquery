@@ -297,9 +297,20 @@ If VAL is supplied, destructively set NODE's data-KEY property to VAL"
         (elquery--parse-libxml-tree nil)))))
 
 (defun elquery-read-string (string)
-  "Return the AST of the HTML string STRING as a plist."
+  "Return the AST of the HTML string STRING as a plist.
+
+If STRING is unibyte, it is assumed to be UTF-8 encoded."
   (with-temp-buffer
-    (set-buffer-multibyte nil) ; ref debbugs.gnu.org/cgi/bugreport.cgi?bug=31427
+    ;; If the string is multibyte, put it in a multibyte buffer to prevent
+    ;; encoding errors. Otherwise, assume it's UTF-8 or ASCII and put it in
+    ;; a unibyte buffer to prevent libxml errors.
+    ;; TODO: Check `<html charset="">` pre-parse and either convert or throw an
+    ;; error if it exists and is not UTF-8
+    ;; REF: https://github.com/AdamNiederer/elquery/issues/5
+    ;; REF: https://github.com/AdamNiederer/elquery/issues/9
+    ;; REF: https://debbugs.gnu.org/cgi/bugreport.cgi?bug=31427
+    (unless (multibyte-string-p string)
+      (set-buffer-multibyte nil))
     (insert string)
     (let ((tree (libxml-parse-html-region (point-min) (point-max))))
       (thread-last tree
