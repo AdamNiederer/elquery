@@ -187,6 +187,12 @@ If INCLUDE-EMPTY is not nil, also consider empty text nodes."
                          (not (string-empty-p (elquery-text el)))))
              (plist-get node :children))))
 
+(cl-defun elquery-child (node &key include-empty)
+  "Return the first child of NODE.
+
+If INCLUDE-EMPTY is not nil, also consider empty text nodes."
+  (car (elquery-children node :include-empty include-empty)))
+
 (cl-defun elquery-next-children (node &key include-empty)
   "Return a list of children of NODE with their children removed.
 
@@ -243,7 +249,7 @@ See also `elquery-full-text', which includes text from non-immediate children."
           (not (elquery-children node))
           (and (not (elquery-elp node))
                (= 1 (length (elquery-children node)))))
-      (plist-get node :text)
+      (or (plist-get node :text) "")
     (->> (elquery-children node)
          (-remove #'elquery-elp)
          (-map #'elquery-text)
@@ -260,7 +266,7 @@ If SEPARATOR is non-nil, separate child nodes' text with it.
 
 See also `elquery-text', which only includes text from immediate children."
   (if (and (not (elquery-elp node)) (not (elquery-children node)))
-      (plist-get node :text)
+      (or (plist-get node :text) "")
     (->> (elquery-children node)
          (-map #'elquery-full-text)
          (-remove #'string-empty-p)
@@ -400,7 +406,7 @@ For example, #foo .bar > #bur[name=baz] returns
          (rest (cl-fourth match)))
     (append (elquery--parse-intersection head)
             `(:rel ,(elquery--rel-kw rel)
-                   :children ,(if rest (elquery--parse-heirarchy rest) nil)))))
+                   :children ,(if rest (list (elquery--parse-heirarchy rest)) nil)))))
 
 (defun elquery--parse-union (string)
   "Return a list of plists representing the query STRING."
@@ -430,22 +436,22 @@ If CAN-RECURSE is set, continue down the tree until a matching element is found.
    ;; No children in the query, no searchable children in the tree, and a match
    ;; in the tree means we can return the leaf
    ((and (elquery--intersects? query tree)
-         (not (elquery-children query))
+         (not (elquery-child query :include-empty t))
          (or (not can-recurse)
              (not (elquery-children tree))))
     tree)
    ;; A match with children remaining in the query means we have to
    ;; recurse according to the query's heirarchy relationship
    ((and (elquery--intersects? query tree)
-         (elquery-children query))
-    (-non-nil (--map (elquery--$ (elquery-children query) it (elquery--$-recurse? query))
+         (elquery-child query :include-empty t))
+    (-non-nil (--map (elquery--$ (elquery-child query :include-empty t) it (elquery--$-recurse? query))
                      (elquery--$-next query tree))))
    ;; A match without children in the query will return the tree, but we must
    ;; still recurse to find any matching children in tree if we aren't looking
    ;; for siblings or next-children
    ((and can-recurse
          (elquery--intersects? query tree)
-         (not (elquery-children query)))
+         (not (elquery-child query :include-empty t)))
     (append (list tree) (-non-nil (--map (elquery--$ query it t)
                                          (elquery-children tree)))))
    ;; No match and a recurse flag means we can continue down the tree and see if
@@ -505,10 +511,6 @@ If WHITESPACE? is non-nil, insert indentation and newlines according to
   (if (not tree) "nil"
     (format "<%s%s>" (elquery-el tree) (elquery--write-props tree))))
 
-(defun elquery--fmt-union (query)
-  "Return a query string for the given query QUERY."
-  (s-join ", " (-map 'elquery--fmt-heirarchy query)))
-
 (defun elquery--fmt-intersection (query)
   "Return a query string for the given query intersection QUERY.
 Always of the form el-name#id.class[key=val], with null elements omitted."
@@ -530,9 +532,15 @@ Always of the form el-name#id.class[key=val], with null elements omitted."
   "Return a query string for the given query heirarchy QUERY."
   (if (null query) ""
     (s-concat (elquery--fmt-intersection query)
-              (if (null (elquery-children query)) ""
+              (if (null (elquery-child query :include-empty t)) ""
                 (s-concat (elquery--pad-operator (elquery--kw-rel (plist-get query :rel)))
-                          (elquery--fmt-heirarchy (elquery-children query)))))))
+                          (elquery--fmt-heirarchy (elquery-child query :include-empty t)))))))
+
+(elquery--fmt-heirarchy (elquery--parse-heirarchy "#kek.bur ~ .bur"))
+
+(defun elquery--fmt-union (query)
+  "Return a query string for the given query QUERY."
+  (s-join ", " (-map 'elquery--fmt-heirarchy query)))
 
 (provide 'elquery)
 ;;; elquery.el ends here

@@ -61,26 +61,28 @@
   (let ((tree (elquery-read-file "test/test.html")))
     (should (equal 3 (length (elquery-$ "#color-input ~ *" tree))))))
 
-(ert-deftest elquery--text-children-test ()
+(ert-deftest elquery--text-test ()
   (let ((tree (elquery-read-file "test/test.html")))
+    (should (equal "" (elquery-text (car (elquery-$ ".non-existent" tree)))))
     (should (equal "" (elquery-text (car (elquery-$ "form" tree)))))
     (should (equal "Elquery's advancedmanipulation takes the world by storm"
                    (elquery-text (car (elquery-$ ".article-section article h1" tree)))))))
 
-(ert-deftest elquery-text-children-seperator-test ()
+(ert-deftest elquery-text-seperator-test ()
   (let ((tree (elquery-read-file "test/test.html")))
     (should (equal "" (elquery-text (car (elquery-$ "form" tree)) "*")))
     (should (equal "Elquery's advanced manipulation takes the world by storm"
                    (elquery-text (car (elquery-$ ".article-section article h1" tree)) " ")))))
 
-(ert-deftest elquery--full-text-children-test ()
+(ert-deftest elquery--full-text-test ()
   (let ((tree (elquery-read-file "test/test.html")))
+    (should (equal "" (elquery-text (car (elquery-$ ".non-existent" tree)))))
     (should (equal "Choose your favorite color!Submit"
                    (elquery-full-text (car (elquery-$ "form" tree)))))
     (should (equal "Elquery's advancedHTMLmanipulation takes the world by storm"
                    (elquery-full-text (car (elquery-$ ".article-section article h1" tree)))))))
 
-(ert-deftest elquery-full-text-children-seperator-test ()
+(ert-deftest elquery-full-text-seperator-test ()
   (let ((tree (elquery-read-file "test/test.html")))
     (should (equal "Choose your favorite color!*Submit"
                    (elquery-full-text (car (elquery-$ "form" tree)) "*")))
