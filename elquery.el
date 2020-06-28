@@ -229,12 +229,42 @@ If VAL is supplied, destructively set PROP to VAL."
   "Return NODE's element name (e.g. body, div, span)."
   (plist-get node :el))
 
-(defun elquery-text (node)
-  "Return the text content of NODE.
+(defun elquery-text (node &optional separator)
+  "Return the text content of NODE and its immediate children.
 If there are multiple text nodes in NODE
-\(e.g.  <h1>some text<span></span>more text</h1>), return the concatenation of
-these text nodes"
-  (plist-get node :text))
+\(e.g.  <h1>some text<span>and</span>more text</h1>), return the concatenation
+of these text nodes (e.g. \"some textmore text\")
+
+If SEPARATOR is non-nil, separate child nodes' text with it.  This
+may incur a performance penalty.
+
+See also `elquery-full-text', which includes text from non-immediate children."
+  (if (or (not (elquery-children node))
+          (and (not (elquery-elp node))
+               (= 1 (length (elquery-children node)))))
+      (plist-get node :text)
+    (->> (elquery-children node)
+         (-remove #'elquery-elp)
+         (-map #'elquery-text)
+         (-remove #'string-empty-p)
+         (s-join (or separator "")))))
+
+(defun elquery-full-text (node &optional separator)
+  "Return the text content of NODE and its children.
+If there are multiple text nodes in NODE
+\(e.g.  <h1>some text<span>and</span>more text</h1>), return the concatenation
+of these text nodes (e.g. \"some textandmore text\")
+
+If SEPARATOR is non-nil, separate child nodes' text with it.  This
+may incur a performance penalty.
+
+See also `elquery-text', which only includes text from immediate children."
+  (if (and (not (elquery-elp node)) (not (elquery-children node)))
+      (plist-get node :text)
+    (->> (elquery-children node)
+         (-map #'elquery-full-text)
+         (-remove #'string-empty-p)
+         (s-join (or separator "")))))
 
 (defun elquery-classes (node)
   "Return a list of NODE's classes."
