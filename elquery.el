@@ -239,7 +239,8 @@ If SEPARATOR is non-nil, separate child nodes' text with it.  This
 may incur a performance penalty.
 
 See also `elquery-full-text', which includes text from non-immediate children."
-  (if (or (not (elquery-children node))
+  (if (or (not separator)
+          (not (elquery-children node))
           (and (not (elquery-elp node))
                (= 1 (length (elquery-children node)))))
       (plist-get node :text)
@@ -255,8 +256,7 @@ If there are multiple text nodes in NODE
 \(e.g.  <h1>some text<span>and</span>more text</h1>), return the concatenation
 of these text nodes (e.g. \"some textandmore text\")
 
-If SEPARATOR is non-nil, separate child nodes' text with it.  This
-may incur a performance penalty.
+If SEPARATOR is non-nil, separate child nodes' text with it.
 
 See also `elquery-text', which only includes text from immediate children."
   (if (and (not (elquery-elp node)) (not (elquery-children node)))
