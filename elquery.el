@@ -1,4 +1,4 @@
-;;; elquery.el --- The HTML library for elisp. -*- lexical-binding: t -*-
+;;; elquery.el --- The HTML library for elisp -*- lexical-binding: t -*-
 
 ;; Copyright 2017 Adam Niederer
 
@@ -27,7 +27,11 @@
 ;; along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
+
+;; Use elquery-read-file or elquery-read-string to generate an HTML tree, and
+;; then use elquery-$ or any of the other exported functions to query it.
 ;;
+;; Exported names start with "elquery-"; private names start with "elquery--".
 
 ;;; Code:
 
