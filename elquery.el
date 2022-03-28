@@ -8,7 +8,7 @@
 
 ;; Keywords: html hypermedia tools webscale
 ;; Homepage: https://github.com/AdamNiederer/elquery
-;; Version: 1.0.0
+;; Version: 1.1.0
 ;; Package-Requires: ((emacs "25.1") (dash "2.13.0"))
 
 ;; This file is not part of GNU Emacs.
@@ -343,14 +343,23 @@ If VAL is supplied, destructively set NODE's data-KEY property to VAL"
       (elquery-prop node (concat "data-" key) val)
     (elquery-prop node (concat "data-" key))))
 
-(defun elquery-read-file (file)
-  "Return the AST of the HTML file FILE as a plist."
-  (with-temp-buffer
-    (insert-file-contents file)
+(defun elquery-read-buffer (buffer)
+  "Return the AST of the HTML contained within BUFFER as a plist."
+  (with-current-buffer buffer
     (let ((tree (libxml-parse-html-region (point-min) (point-max))))
       (thread-last tree
                    (--tree-map (if (stringp it) (string-clean-whitespace it) it))
                    (elquery--parse-libxml-tree nil)))))
+
+(defun elquery-read-url (url)
+  "Return the AST of the HTML at URL as a plist."
+  (elquery-read-buffer (url-retrieve-synchronously url t)))
+
+(defun elquery-read-file (file)
+  "Return the AST of the HTML file FILE as a plist."
+  (with-temp-buffer
+    (insert-file-contents file)
+    (elquery-read-buffer (current-buffer))))
 
 (defun elquery-read-string (string)
   "Return the AST of the HTML string STRING as a plist.
@@ -368,10 +377,7 @@ If STRING is unibyte, it is assumed to be UTF-8 encoded."
     (unless (multibyte-string-p string)
       (set-buffer-multibyte nil))
     (insert string)
-    (let ((tree (libxml-parse-html-region (point-min) (point-max))))
-      (thread-last tree
-                   (--tree-map (if (stringp it) (string-clean-whitespace it) it))
-                   (elquery--parse-libxml-tree nil)))))
+    (elquery-read-buffer (current-buffer))))
 
 (defun elquery--parse-libxml-tree (parent tree)
   "Convert libxml's alist-heavy and position-dependant format to a plist format.

@@ -17,47 +17,51 @@
 #+END_HTML
 
 Write things. Do things.
+
 ** Usage
 It's like jQuery, but way less useful. Given this example HTML file,
 #+BEGIN_SRC html
   <html style="height: 100vh">
-    <head class="kek"><title class="kek" data-bar="foo">Complex HTML Page</title></head>
-    <body class="kek bur" style="height: 100%">
-      <h1 id="bar" class="kek wow">Wow this is an example</h1>
-      <input id="quux" class="kek foo"/>
-      <iframe id="baz" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+    <head class="baz"><title class="baz" data-bar="foo">Complex HTML Page</title></head>
+    <body class="baz bur" style="height: 100%">
+      <h1 id="bar" class="baz wow">Wow this is an example</h1>
+      <input id="quux" class="baz foo"/>
+      <iframe sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
               width="100%" height="100%" src="example.org">
       </iframe>
     </body>
   </html>
 #+END_SRC
 #+BEGIN_SRC elisp
-  (let ((html (elq-read-file "~/kek.html")))
-    (elq-el (car (elq-$ ".kek#quux" html))) ; => "input"
-    (mapcar 'elq-el (elq-$ ".kek" html))    ; => ("input" "h1" "body" "title" "head")
-    (mapcar (lambda (el) (elq-el (elq-parent el)))
-            (elq-$ ".kek" html))            ; => ("body" "body" "html" "head" "html")
-    (mapcar (lambda (el) (mapcar 'elq-el (elq-siblings el)))
-            (elq-$ ".kek" html))            ; => (("h1" "input" "iframe") ("h1" "input" "iframe") ("head" "body") ("title") ("head" "body"))
-    (elq-$ ".kek" html)                     ; => Hope you didn't like your messages buffer
-    (elq-write html nil))                   ; => "<html style=\"height: 100vh\"> ... </html>"
+  (let ((html (elquery-read-file "~/baz.html")))
+    (elquery-el (car (elquery-$ ".baz#quux" html))) ; => "input"
+    (mapcar 'elquery-el (elquery-$ ".baz" html))    ; => ("input" "h1" "body" "title" "head")
+    (mapcar (lambda (el) (elquery-el (elquery-parent el)))
+            (elquery-$ ".baz" html))            ; => ("body" "body" "html" "head" "html")
+    (mapcar (lambda (el) (mapcar 'elquery-el (elquery-siblings el)))
+            (elquery-$ ".baz" html))            ; => (("h1" "input" "iframe") ("h1" "input" "iframe") ("head" "body") ("title") ("head" "body"))
+    (elquery-$ ".baz" html)                     ; => Hope you didn't like your messages buffer
+    (elquery-write html nil))                   ; => "<html style=\"height: 100vh\"> ... </html>"
 #+END_SRC
 ** Functions
 *** I/O and Parsing
-- ~(elquery-read-file FILE)~ - Parse an HTML file, returning an internal
-  representation of its AST. Use ~(elquery-...)~ to manipulate this AST.
-- ~(elquery-read-string STRING)~ - Parse an HTML string, returning an internal
-  representation of its AST. Use ~(elquery-...)~ to manipulate this AST.
-- ~(elquery-write TREE)~ - Return a string of the html representation of TREE
+- ~(elquery-read-url URL)~ - Return a parsed tree of the HTML at URL
+- ~(elquery-read-file FILE)~ - Return a parsed tree of the HTML in FILE
+- ~(elquery-read-buffer BUFFER)~ - Return a parsed tree of the HTML in BUFFER
+- ~(elquery-read-string STRING)~ - Return a parsed tree of the HTML in STRING
+- ~(elquery-write TREE)~ - Return a string of the HTML representation of TREE
   and its children.
-- ~(elquery-fmt TREE)~ - Return a string of the html-representation of the
+- ~(elquery-fmt TREE)~ - Return a string of the HTML representation of the
   topmost node of TREE, without its children or closing tag.
+- ~(elquery-pprint TREE)~ - Return the CSS selector representation of the
+  topmost node of TREE.
 *** DOM Traversal
 - ~(elquery-$ SELECTOR TREE)~ - Return a list of subtrees of TREE which matches
   the query string. Currently, the element name, id, class, and property values
   are supported, along with some set operations and hierarchy relationships. See
   Selector Syntax for a more detailed overview of valid selectors.
 - ~(elquery-parent NODE)~ - Return the parent of NODE
+- ~(elquery-child NODE)~ - Return the first child of NODE
 - ~(elquery-children NODE)~ - Return a list of the children of NODE
 - ~(elquery-siblings NODE)~ - Return a list of the siblings of NODE
 - ~(elquery-next-children NODE)~ - Return a list of children of NODE with the
@@ -67,10 +71,14 @@ It's like jQuery, but way less useful. Given this example HTML file,
 - ~(elquery-class? NODE CLASS)~ - Return whether NODE has the class CLASS
 - ~(elquery-id NODE)~ - Return the id of NODE
 - ~(elquery-classes NODE)~ - Return a list of the classes of NODE
-- ~(elquery-text NODE)~ - Return the text contained in NODE. If there are
-  multiple text elements, for example, ~<span>Hello <span>cruel</span>
-  world</span>~, return the concatenation of these nodes, ~Hello world~, with
-  two spaces between ~Hello~ and ~world~
+- ~(elquery-text NODE)~ - Return the text content of NODE. If there are multiple
+  text elements, for example, ~<span>Hello <span>cruel</span> world</span>~,
+  return the concatenation of these nodes, ~Hello  world~, with two spaces
+  between ~Hello~ and ~world~
+- ~(elquery-full-text NODE)~ - Return the text content of NODE and its
+  children. If there are multiple text elements, for example, ~<span>Hello
+  <span>cruel</span> world</span>~, return the concatenation of these nodes,
+  ~Hello cruel world~.
 *** Property Modification
 - ~(elquery-props NODE)~ - Return a plist of this node's properties, including
   its id, class, and data attributes.
