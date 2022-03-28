@@ -303,9 +303,11 @@ See also `elquery-full-text', which includes text from non-immediate children."
 
 (defun elquery-full-text (node &optional separator)
   "Return the text content of NODE and its children.
+
 If there are multiple text nodes in NODE
-\(e.g.  <h1>some text<span>and</span>more text</h1>), return the concatenation
-of these text nodes (e.g. \"some textandmore text\")
+\(e.g.  <h1>some text <span>and </span> more text</h1>), return the concatenation
+of these text nodes, ignoring leading and trailing spaces in each text node.
+\(e.g. \"some textandmore text\").
 
 If SEPARATOR is non-nil, separate child nodes' text with it.
 

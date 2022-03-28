@@ -24,7 +24,7 @@ It's like jQuery, but way less useful. Given this example HTML file,
   <html style="height: 100vh">
     <head class="baz"><title class="baz" data-bar="foo">Complex HTML Page</title></head>
     <body class="baz bur" style="height: 100%">
-      <h1 id="bar" class="baz wow">Wow this is an example</h1>
+      <h1 id="bar" class="baz wow">Wow this is an <em>example</em></h1>
       <input id="quux" class="baz foo"/>
       <iframe sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
               width="100%" height="100%" src="example.org">
@@ -34,14 +34,30 @@ It's like jQuery, but way less useful. Given this example HTML file,
 #+END_SRC
 #+BEGIN_SRC elisp
   (let ((html (elquery-read-file "~/baz.html")))
-    (elquery-el (car (elquery-$ ".baz#quux" html))) ; => "input"
-    (mapcar 'elquery-el (elquery-$ ".baz" html))    ; => ("input" "h1" "body" "title" "head")
-    (mapcar (lambda (el) (elquery-el (elquery-parent el)))
-            (elquery-$ ".baz" html))            ; => ("body" "body" "html" "head" "html")
-    (mapcar (lambda (el) (mapcar 'elquery-el (elquery-siblings el)))
-            (elquery-$ ".baz" html))            ; => (("h1" "input" "iframe") ("h1" "input" "iframe") ("head" "body") ("title") ("head" "body"))
-    (elquery-$ ".baz" html)                     ; => Hope you didn't like your messages buffer
-    (elquery-write html nil))                   ; => "<html style=\"height: 100vh\"> ... </html>"
+    ;;; Query elements
+    (elquery-el (car (elquery-$ ".baz#quux" html)))
+    ;; => "input"
+    (mapcar 'elquery-el (elquery-$ ".baz" html))
+    ;; => ("input" "h1" "body" "title" "head")
+    (mapcar (lambda (el) (elquery-el (elquery-parent el))) (elquery-$ ".baz" html))
+    ;; => ("body" "body" "html" "head" "html")
+    (mapcar (lambda (el) (mapcar 'elquery-el (elquery-siblings el))) (elquery-$ ".baz" html))
+    ;; => (("h1" "input" "iframe") ("h1" "input" "iframe") ("head" "body") ("title") ("head" "body"))
+
+    ;;; Read properties of elements
+    (elquery-classes (car (elquery-$ ".baz#quux" html)))
+    ;; => ("baz" "foo")
+    (elquery-prop (car (elquery-$ "iframe" html)) "sandbox")
+    ;; => "allow-same-origin allow-scripts allow-popups allow-forms"
+    (elquery-text (car (elquery-$ "h1" html)))
+    ;; => "Wow this is an"
+    (elquery-full-text (car (elquery-$ "h1" html)) " ")
+    ;; => "Wow this is an example"
+
+    ;;; Write parsed HTML
+    (elquery-write html nil)
+    ;; => "<html style=\"height: 100vh\"> ... </html>"
+    )
 #+END_SRC
 ** Functions
 *** I/O and Parsing
@@ -53,8 +69,8 @@ It's like jQuery, but way less useful. Given this example HTML file,
   and its children.
 - ~(elquery-fmt TREE)~ - Return a string of the HTML representation of the
   topmost node of TREE, without its children or closing tag.
-- ~(elquery-pprint TREE)~ - Return the CSS selector representation of the
-  topmost node of TREE.
+- ~(elquery-pprint TREE)~ - Return a pretty, CSS-selector-like representation of
+  the topmost node of TREE.
 *** DOM Traversal
 - ~(elquery-$ SELECTOR TREE)~ - Return a list of subtrees of TREE which matches
   the query string. Currently, the element name, id, class, and property values
