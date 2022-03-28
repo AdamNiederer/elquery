@@ -8,7 +8,7 @@
 
 ;; Keywords: html hypermedia tools webscale
 ;; Homepage: https://github.com/AdamNiederer/elquery
-;; Version: 0.1.0
+;; Version: 1.0.0
 ;; Package-Requires: ((emacs "25.1") (dash "2.13.0"))
 
 ;; This file is not part of GNU Emacs.
