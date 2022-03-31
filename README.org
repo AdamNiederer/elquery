@@ -1,4 +1,6 @@
-* elquery
+#+TITLE: elquery: parse, query, and format HTML with Emacs Lisp
+#+AUTHOR: Adam Niederer
+
 #+BEGIN_HTML
 <div>
   <a href="https://www.gnu.org/licenses/gpl-3.0.en.html">
@@ -16,14 +18,16 @@
 </div>
 #+END_HTML
 
+#+BEGIN_QUOTE
 Write things. Do things.
+#+END_QUOTE
 
-** Usage
 elquery is a library that lets you parse, query, set, and format HTML using
 Emacs Lisp. It implements (most of) the [[https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector][querySelector]] API with ~elquery-$~, and
-can get and set HTML attributes. Given the below HTML file, some usage examples
-include:
+can get and set HTML attributes.
 
+* Usage
+Given the below HTML file, some usage examples include:
 #+BEGIN_SRC html
   <html style="height: 100vh">
     <head class="baz"><title class="baz" data-bar="foo">Complex HTML Page</title></head>
@@ -63,8 +67,8 @@ include:
     ;; => "<html style=\"height: 100vh\"> ... </html>"
     )
 #+END_SRC
-** Functions
-*** I/O and Parsing
+* Functions
+** I/O and Parsing
 - ~(elquery-read-url URL)~ - Return a parsed tree of the HTML at URL
 - ~(elquery-read-file FILE)~ - Return a parsed tree of the HTML in FILE
 - ~(elquery-read-buffer BUFFER)~ - Return a parsed tree of the HTML in BUFFER
@@ -75,7 +79,7 @@ include:
   topmost node of TREE, without its children or closing tag.
 - ~(elquery-pprint TREE)~ - Return a pretty, CSS-selector-like representation of
   the topmost node of TREE.
-*** DOM Traversal
+** DOM Traversal
 - ~(elquery-$ SELECTOR TREE)~ - Return a list of subtrees of TREE which matches
   the query string. Currently, the element name, id, class, and property values
   are supported, along with some set operations and hierarchy relationships. See
@@ -87,7 +91,7 @@ include:
 - ~(elquery-next-children NODE)~ - Return a list of children of NODE with the
   children's children removed.
 - ~(elquery-next-sibling NODE)~ - Return the sibling immediately following NODE
-*** Common Trait Selection
+** Common Trait Selection
 - ~(elquery-class? NODE CLASS)~ - Return whether NODE has the class CLASS
 - ~(elquery-id NODE)~ - Return the id of NODE
 - ~(elquery-classes NODE)~ - Return a list of the classes of NODE
@@ -99,7 +103,7 @@ include:
   children. If there are multiple text elements, for example, ~<span>Hello
   <span>cruel</span> world</span>~, return the concatenation of these nodes,
   ~Hello cruel world~.
-*** Property Modification
+** Property Modification
 - ~(elquery-props NODE)~ - Return a plist of this node's properties, including
   its id, class, and data attributes.
 - ~(elquery-data NODE KEY &optional VAL)~ - Return the value of NODE's data-KEY
@@ -109,11 +113,11 @@ include:
 - ~(elquery-prop NODE PROP &optional VAL)~ - Return the value of PROP in
   NODE. If VAL is supplied, destructively set PROP to VAL.
 - ~(elquery-rm-prop NODE)~ - Destructively remove PROP from NODE
-*** Predicates
+** Predicates
 - ~(elquery-nodep OBJ)~ - Return whether OBJ is a DOM node
 - ~(elquery-elp OBJ)~ - Return whether OBJ is not a text node
 - ~(elquery-textp OBJ)~ - Return whether OBJ is a text node
-*** General Tree Functions
+** General Tree Functions
 Because HTML is a large tree representation, elq includes some general tree
 manipulation functions which it uses internally, and may be useful to you when
 dealing with the DOM.
@@ -130,7 +134,7 @@ dealing with the DOM.
   of the elements.
 - ~(elquery-tree-flatten-until pred tree)~ - Flatten the tree, but treat
   elements matching PRED as atomic elements, not preserving order.
-*** Selector Syntax
+* Selector Syntax
 We support a significant subset of jQuery's selector syntax. If I ever decide to
 make this project even more web-scale, I'll add colon selectors and more
 property equality tests.
@@ -152,7 +156,7 @@ property equality tests.
 
 All permutations of union, intersection, child, next-child, and sibling
 relationships are supported.
-*** Internal Data Structure
+* Internal Data Structure
 Each element is a plist, which is guaranteed to have at least one key-value
 pair, and an ~:el~ key. All elements of this plist are accessible with the above
 functions, but the internal representation of a document node is below for

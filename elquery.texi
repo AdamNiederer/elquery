@@ -1,0 +1,290 @@
+@node Top
+@top elquery: parse, query, and format HTML with Emacs Lisp
+
+@quotation
+Write things. Do things.
+@end quotation
+elquery is a library that lets you parse, query, set, and format HTML
+using Emacs Lisp. It implements (most of) the
+@uref{https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector,querySelector}
+API with @code{elquery-$}, and can get and set HTML attributes.
+
+@menu
+* Usage::
+* Functions::
+* Selector Syntax::
+* Internal Data Structure::
+@end menu
+
+@node Usage
+@chapter Usage
+@anchor{#usage}
+Given the below HTML file, some usage examples include:
+
+@verbatim
+<html style="height: 100vh">
+  <head class="baz"><title class="baz" data-bar="foo">Complex HTML Page</title></head>
+  <body class="baz bur" style="height: 100%">
+    <h1 id="bar" class="baz wow">Wow this is an <em>example</em></h1>
+    <input id="quux" class="baz foo"/>
+    <iframe sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            width="100%" height="100%" src="example.org">
+    </iframe>
+  </body>
+</html>
+@end verbatim
+
+@verbatim
+(let ((html (elquery-read-file "~/baz.html")))
+  ;;; Query elements
+  (elquery-el (car (elquery-$ ".baz#quux" html)))
+  ;; => "input"
+  (mapcar 'elquery-el (elquery-$ ".baz" html))
+  ;; => ("input" "h1" "body" "title" "head")
+  (mapcar (lambda (el) (elquery-el (elquery-parent el))) (elquery-$ ".baz" html))
+  ;; => ("body" "body" "html" "head" "html")
+  (mapcar (lambda (el) (mapcar 'elquery-el (elquery-siblings el))) (elquery-$ ".baz" html))
+  ;; => (("h1" "input" "iframe") ("h1" "input" "iframe") ("head" "body") ("title") ("head" "body"))
+
+  ;;; Read properties of elements
+  (elquery-classes (car (elquery-$ ".baz#quux" html)))
+  ;; => ("baz" "foo")
+  (elquery-prop (car (elquery-$ "iframe" html)) "sandbox")
+  ;; => "allow-same-origin allow-scripts allow-popups allow-forms"
+  (elquery-text (car (elquery-$ "h1" html)))
+  ;; => "Wow this is an"
+  (elquery-full-text (car (elquery-$ "h1" html)) " ")
+  ;; => "Wow this is an example"
+
+  ;;; Write parsed HTML
+  (elquery-write html nil)
+  ;; => "<html style=\"height: 100vh\"> ... </html>"
+  )
+@end verbatim
+
+@node Functions
+@chapter Functions
+@anchor{#functions}
+
+@menu
+* I/O and Parsing::
+* DOM Traversal::
+* Common Trait Selection::
+* Property Modification::
+* Predicates::
+* General Tree Functions::
+@end menu
+
+@node I/O and Parsing
+@section I/O and Parsing
+@anchor{#io-and-parsing}
+@itemize
+@item
+@code{(elquery-read-url URL)} - Return a parsed tree of the HTML at URL
+@item
+@code{(elquery-read-file FILE)} - Return a parsed tree of the HTML in
+FILE
+@item
+@code{(elquery-read-buffer BUFFER)} - Return a parsed tree of the HTML
+in BUFFER
+@item
+@code{(elquery-read-string STRING)} - Return a parsed tree of the HTML
+in STRING
+@item
+@code{(elquery-write TREE)} - Return a string of the HTML representation
+of TREE and its children.
+@item
+@code{(elquery-fmt TREE)} - Return a string of the HTML representation
+of the topmost node of TREE, without its children or closing tag.
+@item
+@code{(elquery-pprint TREE)} - Return a pretty, CSS-selector-like
+representation of the topmost node of TREE.
+@end itemize
+
+@node DOM Traversal
+@section DOM Traversal
+@anchor{#dom-traversal}
+@itemize
+@item
+@code{(elquery-$ SELECTOR TREE)} - Return a list of subtrees of TREE
+which matches the query string. Currently, the element name, id, class,
+and property values are supported, along with some set operations and
+hierarchy relationships. See Selector Syntax for a more detailed
+overview of valid selectors.
+@item
+@code{(elquery-parent NODE)} - Return the parent of NODE
+@item
+@code{(elquery-child NODE)} - Return the first child of NODE
+@item
+@code{(elquery-children NODE)} - Return a list of the children of NODE
+@item
+@code{(elquery-siblings NODE)} - Return a list of the siblings of NODE
+@item
+@code{(elquery-next-children NODE)} - Return a list of children of NODE
+with the children's children removed.
+@item
+@code{(elquery-next-sibling NODE)} - Return the sibling immediately
+following NODE
+@end itemize
+
+@node Common Trait Selection
+@section Common Trait Selection
+@anchor{#common-trait-selection}
+@itemize
+@item
+@code{(elquery-class? NODE CLASS)} - Return whether NODE has the class
+CLASS
+@item
+@code{(elquery-id NODE)} - Return the id of NODE
+@item
+@code{(elquery-classes NODE)} - Return a list of the classes of NODE
+@item
+@code{(elquery-text NODE)} - Return the text content of NODE. If there
+are multiple text elements, for example,
+@code{<span>Hello <span>cruel</span> world</span>}, return the
+concatenation of these nodes, @code{Hello  world}, with two spaces
+between @code{Hello} and @code{world}
+@item
+@code{(elquery-full-text NODE)} - Return the text content of NODE and
+its children. If there are multiple text elements, for example,
+@code{<span>Hello
+ <span>cruel</span> world</span>}, return the concatenation of these
+nodes, @code{Hello cruel world}.
+@end itemize
+
+@node Property Modification
+@section Property Modification
+@anchor{#property-modification}
+@itemize
+@item
+@code{(elquery-props NODE)} - Return a plist of this node's properties,
+including its id, class, and data attributes.
+@item
+@code{(elquery-data NODE KEY &optional VAL)} - Return the value of
+NODE's data-KEY property. If VAL is supplied, destructively set NODE's
+data-KEY property to VAL. For example, on the node
+@code{<span data-name="adam">}, @code{(elquery-data node
+ "name")} would return @code{adam}
+@item
+@code{(elquery-prop NODE PROP &optional VAL)} - Return the value of PROP
+in NODE. If VAL is supplied, destructively set PROP to VAL.
+@item
+@code{(elquery-rm-prop NODE)} - Destructively remove PROP from NODE
+@end itemize
+
+@node Predicates
+@section Predicates
+@anchor{#predicates}
+@itemize
+@item
+@code{(elquery-nodep OBJ)} - Return whether OBJ is a DOM node
+@item
+@code{(elquery-elp OBJ)} - Return whether OBJ is not a text node
+@item
+@code{(elquery-textp OBJ)} - Return whether OBJ is a text node
+@end itemize
+
+@node General Tree Functions
+@section General Tree Functions
+@anchor{#general-tree-functions}
+Because HTML is a large tree representation, elq includes some general
+tree manipulation functions which it uses internally, and may be useful
+to you when dealing with the DOM.
+
+@itemize
+@item
+@code{(elquery-tree-remove-if pred tree)} - Remove all elements from
+TREE if they satisfy PRED. Preserves the structure and order of the
+tree.
+@item
+@code{(elquery-tree-remove-if-not pred tree)} - Remove all elements from
+TREE if they do not satisfy PRED. Preserves the structure and order of
+the tree.
+@item
+@code{(elquery-tree-mapcar fn tree)} - Apply FN to all elements in TREE
+@item
+@code{(elquery-tree-reduce fn tree)} - Perform an in-order reduction of
+TREE with FN. Equivalent to a reduction on a flattened tree.
+@item
+@code{(elquery-tree-flatten tree)} - Flatten the tree, removing all list
+nesting and leaving a list of only atomic elements. This does not
+preserve the order of the elements.
+@item
+@code{(elquery-tree-flatten-until pred tree)} - Flatten the tree, but
+treat elements matching PRED as atomic elements, not preserving order.
+@end itemize
+
+@node Selector Syntax
+@chapter Selector Syntax
+@anchor{#selector-syntax}
+We support a significant subset of jQuery's selector syntax. If I ever
+decide to make this project even more web-scale, I'll add colon
+selectors and more property equality tests.
+
+@itemize
+@item
+@code{#foo} - Select all elements with the id "foo"
+@item
+@code{.bar} - Select all elements with the class "bar"
+@item
+@code{[name=user]} - Select all elements whose "name" property is "user"
+@item
+@code{#foo.bar[name=user]} - Logical intersection of the above three
+selectors. Select all elements whose id is "foo", class is ".bar", and
+"name" is "user"
+@item
+@code{#foo .bar, [name=user]} - Select all elements with the class "bar"
+in the subtrees of all elements with the id "foo", along with all
+elements whose "name" is "user"
+@item
+@code{#foo > .bar} - Select all elements with class "bar" whose
+immediate parent has id "foo"
+@item
+@code{#foo ~ .bar} - Select all elements with class "bar" which are
+siblings of elements with id "foo"
+@item
+@code{#foo + .bar} - Select all elements with class "bar" which
+immediately follow elements with id "foo"
+@end itemize
+
+All permutations of union, intersection, child, next-child, and sibling
+relationships are supported.
+
+@node Internal Data Structure
+@chapter Internal Data Structure
+@anchor{#internal-data-structure}
+Each element is a plist, which is guaranteed to have at least one
+key-value pair, and an @code{:el} key. All elements of this plist are
+accessible with the above functions, but the internal representation of
+a document node is below for anybody brave enough to hack on this:
+
+@itemize
+@item
+@code{:el} - A string containing the name of the element. If the node is
+a "text node", @code{:el is nil}
+@item
+@code{:text} - A string containing the concatenation of all text
+elements immediately below this one on the tree. For example, the node
+representing @code{<span>Hello <span>cruel</span> world</span>} would be
+~Hello world".
+@item
+@code{:props} - A plist of HTML properties for each element, including
+but not limited to its @code{:id}, @code{class}, @code{data-*}, and
+@code{name} attributes.
+@item
+@code{:parent} - A pointer to the parent element. Emacs thinks this is a
+list.
+@item
+@code{:children} - A list of elements immediately below this one on the
+tree, including text nodes.
+@end itemize
+
+The data structure used in queries via @code{(elquery-$)} is very
+similar, although it doesn't have @code{:text} keyword (PRs welcome!)
+and has an extra @code{:rel} keyword, which specifies the relationship
+between the query and its @code{:children}. @code{:rel} may be one of
+@code{:next-child}, @code{:child}, @code{next-sibling}, and
+@code{:sibling}. This is used by the internal function
+@code{(elquery--$)} which must determine whether it can continue
+recursion down the tree based on the relationship of two intersections
+in a selector.
