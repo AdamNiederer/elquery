@@ -19,7 +19,11 @@
 Write things. Do things.
 
 ** Usage
-It's like jQuery, but way less useful. Given this example HTML file,
+elquery is a library that lets you parse, query, set, and format HTML using
+Emacs Lisp. It implements (most of) the [[https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector][querySelector]] API with ~elquery-$~, and
+can get and set HTML attributes. Given the below HTML file, some usage examples
+include:
+
 #+BEGIN_SRC html
   <html style="height: 100vh">
     <head class="baz"><title class="baz" data-bar="foo">Complex HTML Page</title></head>
